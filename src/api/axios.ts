@@ -50,64 +50,63 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 });
 
 // Response interceptor for 401s and Mock Fallback
-api.interceptors.response.use(
-  (response: AxiosResponse) => {
-    isBackendOffline = false;
-    return response;
-  },
-
-  async (error: AxiosError) => {
-    // Check if it's a 401
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem("token");
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login";
+export const applyMockFallback = (instance: any) => {
+  instance.interceptors.response.use(
+    (response: AxiosResponse) => {
+      isBackendOffline = false;
+      return response;
+    },
+    async (error: AxiosError) => {
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem("token");
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
+        return Promise.reject(error);
       }
-      return Promise.reject(error);
-    }
 
-    // Check if we should fallback to mock
-    if (shouldFallbackToMock(error) || isBackendOffline) {
-      isBackendOffline = true;
-      console.warn("Backend appears to be offline. Switching to Mock API...");
-      
-      const { url, method } = error.config || {};
-      const lowerMethod = method?.toLowerCase();
-      
-      if (url) {
-        const cleanUrl = url.split('?')[0];
-        const mockResponse = mockEndpoints[cleanUrl] || mockEndpoints[Object.keys(mockEndpoints).find(k => cleanUrl.includes(k)) || ''];
+      if (shouldFallbackToMock(error) || isBackendOffline) {
+        isBackendOffline = true;
+        console.warn("Backend appears to be offline. Switching to Mock API...");
         
-        if (mockResponse) {
-          // Special case: If it's a login/profile request, we always return the mock data regardless of method
-          if (cleanUrl.includes('/auth/') || lowerMethod === 'get') {
-            console.log(`[Mock API] Returning specific data for: ${url}`);
+        const { url, method } = error.config || {};
+        const lowerMethod = method?.toLowerCase();
+        
+        if (url) {
+          const cleanUrl = url.replace(/\/api\/v1/, "").split('?')[0]; // Strip prefix and params
+          const mockResponse = mockEndpoints[cleanUrl] || mockEndpoints[Object.keys(mockEndpoints).find(k => cleanUrl.includes(k)) || ''];
+          
+          if (mockResponse) {
+            if (cleanUrl.includes('/auth/') || lowerMethod === 'get') {
+              console.log(`[Mock API] Returning specific data for: ${url}`);
+              return {
+                data: { success: true, data: mockResponse },
+                status: 200,
+                statusText: "OK",
+                headers: {},
+                config: error.config,
+              };
+            }
+          }
+        }
+        
+        if (lowerMethod && ['post', 'put', 'delete'].includes(lowerMethod)) {
             return {
-              data: { success: true, data: mockResponse },
+              data: { success: true, message: "Action performed (Mock)" },
               status: 200,
               statusText: "OK",
               headers: {},
               config: error.config,
             };
-          }
         }
       }
-      
-      // For other non-GET requests, return generic success
-      if (lowerMethod && ['post', 'put', 'delete'].includes(lowerMethod)) {
-          return {
-            data: { success: true, message: "Action performed (Mock)" },
-            status: 200,
-            statusText: "OK",
-            headers: {},
-            config: error.config,
-          };
-      }
 
+      return Promise.reject(error);
     }
+  );
+};
 
-    return Promise.reject(error);
-  }
-);
+applyMockFallback(api);
 
-export default api;
+export default api;
+
