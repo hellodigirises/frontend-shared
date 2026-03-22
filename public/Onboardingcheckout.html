@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Realesso CRM — Start Free</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<style>
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --obsidian: #050a0e;
+    --surface-1: #0b1217;
+    --surface-2: #121b22;
+    --surface-3: #1a2632;
+    --border: #1e2d3d;
+    --border-light: #263545;
+    --emerald: #00e676;
+    --emerald-dim: #00c45f;
+    --emerald-glow: rgba(0,230,118,.15);
+    --amber: #ffb347;
+    --amber-dim: #e69920;
+    --sky: #38bdf8;
+    --violet: #a78bfa;
+    --text-1: #f0f6fc;
+    --text-2: #8b9eb0;
+    --text-3: #4a5e6e;
+    --font-serif: 'Instrument Serif', Georgia, serif;
+    --font-sans: 'DM Sans', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow-glow: 0 0 60px rgba(0,230,118,.12);
+  }
+  html { font-family: var(--font-sans); background: var(--obsidian); color: var(--text-1); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  button { font-family: var(--font-sans); cursor: pointer; }
+  input, select, textarea { font-family: var(--font-sans); }
+  a { color: var(--emerald); text-decoration: none; }
+
+  /* ── Animated BG ── */
+  .bg-canvas {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+  }
+  .bg-orb {
+    position: absolute; border-radius: 50%; filter: blur(90px); opacity: .06;
+    animation: orb-drift 20s ease-in-out infinite;
+  }
+  .bg-orb:nth-child(1) { width:500px;height:500px; background:var(--emerald); top:-100px;right:-100px; animation-delay:0s; }
+  .bg-orb:nth-child(2) { width:400px;height:400px; background:var(--violet); bottom:10%;left:-80px; animation-delay:-8s; }
+  .bg-orb:nth-child(3) { width:300px;height:300px; background:var(--amber); top:40%;right:20%; animation-delay:-14s; }
+  @keyframes orb-drift { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(30px,-20px) scale(1.05)} 66%{transform:translate(-20px,30px) scale(.95)} }
+
+  /* ── Grid overlay ── */
+  .bg-grid {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 48px 48px; opacity: .3;
+  }
+
+  /* ── Layout ── */
+  .page { position: relative; z-index: 1; min-height: 100vh; display: none; }
+  .page.active { display: block; }
+
+  /* ── Header ── */
+  .site-header {
+    position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    background: rgba(5,10,14,.8); border-bottom: 1px solid var(--border);
+    padding: 16px 40px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-mark { width:36px;height:36px;border-radius:10px;background:var(--emerald);display:flex;align-items:center;justify-content:center;font-size:18px; }
+  .logo-text { font-family:var(--font-serif);font-size:1.3rem;color:var(--text-1);letter-spacing:-.02em; }
+  .header-actions { display:flex;align-items:center;gap:16px; }
+  .header-link { color:var(--text-2);font-size:14px;font-weight:500;transition:color .15s; }
+  .header-link:hover { color:var(--text-1); }
+
+  /* ── Buttons ── */
+  .btn {
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    border:none;border-radius:var(--radius-sm);font-weight:700;transition:all .2s;cursor:pointer;
+    white-space:nowrap;text-decoration:none;
+  }
+  .btn-primary {
+    background:var(--emerald);color:#020a06;padding:12px 24px;font-size:14px;
+    box-shadow:0 0 24px rgba(0,230,118,.25);
+  }
+  .btn-primary:hover { background:#00ff88;box-shadow:0 0 36px rgba(0,230,118,.4);transform:translateY(-1px); }
+  .btn-primary:active { transform:translateY(0); }
+  .btn-primary-lg { padding:16px 36px;font-size:16px;border-radius:10px; }
+  .btn-ghost { background:transparent;color:var(--text-2);padding:10px 18px;font-size:13px;border:1px solid var(--border); }
+  .btn-ghost:hover { border-color:var(--border-light);color:var(--text-1);background:var(--surface-2); }
+  .btn-outline { background:transparent;color:var(--emerald);padding:12px 24px;font-size:14px;border:1.5px solid rgba(0,230,118,.4); }
+  .btn-outline:hover { background:var(--emerald-glow);border-color:var(--emerald); }
+  .btn-full { width:100%; }
+  .btn-disabled { opacity:.45;pointer-events:none; }
+
+  /* ── Step indicator ── */
+  .step-bar { display:flex;align-items:center;gap:0;padding:32px 40px 0; max-width:1000px;margin:0 auto; }
+  .step-item { display:flex;flex-direction:column;align-items:center;flex:1;position:relative; }
+  .step-item:not(:last-child)::after { content:'';position:absolute;top:18px;left:50%;width:100%;height:1px;background:var(--border); z-index:0; }
+  .step-item.active .step-node { background:var(--emerald);color:#020a06;box-shadow:0 0 16px rgba(0,230,118,.4); }
+  .step-item.done .step-node { background:#064e23;border-color:var(--emerald);color:var(--emerald); }
+  .step-node {
+    width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border-light);
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;
+    background:var(--surface-2);color:var(--text-3);z-index:1;transition:all .3s;position:relative;
+  }
+  .step-label { font-size:11px;font-weight:700;color:var(--text-3);margin-top:6px;text-transform:uppercase;letter-spacing:.8px; }
+  .step-item.active .step-label { color:var(--emerald); }
+  .step-item.done .step-label { color:var(--emerald-dim); }
+
+  /* ── Form card ── */
+  .form-wrap { max-width:680px;margin:0 auto;padding:40px; }
+  .form-card { background:var(--surface-1);border:1px solid var(--border);border-radius:20px;overflow:hidden; }
+  .form-head { padding:32px 36px 24px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,var(--surface-2),var(--surface-1)); }
+  .form-head-title { font-family:var(--font-serif);font-size:1.6rem;color:var(--text-1);font-weight:400;letter-spacing:-.02em;margin-bottom:6px; }
+  .form-head-sub { color:var(--text-2);font-size:14px; }
+  .form-body { padding:32px 36px; }
+  .form-footer { padding:20px 36px 28px;border-top:1px solid var(--border);background:var(--surface-2);display:flex;align-items:center;justify-content:space-between; }
+
+  /* ── Input ── */
+  .field { margin-bottom:20px; }
+  .field label { display:block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);margin-bottom:8px; }
+  .field-row { display:grid;grid-template-columns:1fr 1fr;gap:16px; }
+  .field-row-3 { display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px; }
+  .input {
+    width:100%;padding:12px 16px;background:var(--surface-2);border:1.5px solid var(--border);
+    border-radius:var(--radius-sm);color:var(--text-1);font-size:14px;font-weight:500;
+    transition:all .2s;outline:none;
+  }
+  .input::placeholder { color:var(--text-3); }
+  .input:focus { border-color:var(--emerald);background:var(--surface-3);box-shadow:0 0 0 3px rgba(0,230,118,.12); }
+  .input.error { border-color:#ff4757; }
+  .error-msg { font-size:11px;color:#ff4757;margin-top:4px;font-weight:600; }
+  .input-prefix { position:relative; }
+  .input-prefix .input { padding-left:100px; }
+  .prefix-text { position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-3);font-size:14px;font-weight:600;pointer-events:none; }
+  .input-suffix { position:relative; }
+  .input-suffix .input { padding-right:130px; }
+  .suffix-text { position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--text-3);font-family:var(--font-mono);font-size:12px;pointer-events:none; }
+  .subdomain-check { display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px; }
+  .subdomain-check.ok { color:var(--emerald); }
+  .subdomain-check.err { color:#ff4757; }
+
+  /* ── Password strength ── */
+  .pw-strength { margin-top:8px; }
+  .pw-bars { display:flex;gap:4px;margin-bottom:6px; }
+  .pw-bar { flex:1;height:3px;border-radius:2px;background:var(--border);transition:background .3s; }
+  .pw-bar.filled-1 { background:#ff4757; }
+  .pw-bar.filled-2 { background:#ff9f43; }
+  .pw-bar.filled-3 { background:var(--amber); }
+  .pw-bar.filled-4 { background:var(--emerald); }
+  .pw-label { font-size:11px;color:var(--text-3); }
+
+  /* ── OTP field ── */
+  .otp-row { display:flex;gap:10px;justify-content:center; }
+  .otp-input { width:50px;height:58px;text-align:center;font-size:20px;font-weight:800;font-family:var(--font-mono); background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);outline:none;transition:all .2s; }
+  .otp-input:focus { border-color:var(--emerald);box-shadow:0 0 0 3px rgba(0,230,118,.15); }
+
+  /* ── Plan Cards ── */
+  .plans-wrap { max-width:1100px;margin:0 auto;padding:40px; }
+  .plans-head { text-align:center;margin-bottom:48px; }
+  .plans-head h1 { font-family:var(--font-serif);font-size:3rem;letter-spacing:-.04em;margin-bottom:12px; }
+  .plans-head p { color:var(--text-2);font-size:1.05rem;max-width:500px;margin:0 auto; }
+  .billing-toggle { display:inline-flex;align-items:center;gap:16px;background:var(--surface-2);border:1px solid var(--border);border-radius:100px;padding:6px 20px;margin:28px auto 0;
+  }
+  .billing-toggle label { font-size:14px;font-weight:600;color:var(--text-2);cursor:pointer;transition:color .2s; }
+  .billing-toggle label.active { color:var(--text-1); }
+  .toggle-switch { width:44px;height:24px;background:var(--emerald);border-radius:12px;position:relative;cursor:pointer;transition:background .2s; }
+  .toggle-switch::after { content:'';width:18px;height:18px;background:#fff;border-radius:9px;position:absolute;top:3px;left:3px;transition:left .2s; }
+  .toggle-switch.monthly::after { left:23px; }
+  .save-badge { font-size:11px;font-weight:800;color:#020a06;background:var(--emerald);padding:3px 8px;border-radius:6px;margin-left:4px; }
+  .plans-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:24px; }
+  .plan-card {
+    background:var(--surface-1);border:1.5px solid var(--border);border-radius:20px;
+    padding:32px;cursor:pointer;position:relative;overflow:hidden;transition:all .25s;
+  }
+  .plan-card:hover { border-color:var(--border-light);transform:translateY(-3px); }
+  .plan-card.selected { border-color:var(--emerald);box-shadow:0 0 40px rgba(0,230,118,.15);transform:translateY(-4px); }
+  .plan-card.popular { border-color:#7c3aed; }
+  .plan-card.popular.selected { border-color:var(--emerald); }
+  .popular-badge { position:absolute;top:16px;right:16px;font-size:11px;font-weight:800;color:#fff;background:#7c3aed;padding:4px 10px;border-radius:6px; }
+  .plan-icon { font-size:32px;margin-bottom:16px;display:block; }
+  .plan-name { font-family:var(--font-serif);font-size:1.4rem;margin-bottom:4px; }
+  .plan-tagline { color:var(--text-2);font-size:13px;margin-bottom:24px; }
+  .plan-price { display:flex;align-items:baseline;gap:4px;margin-bottom:4px; }
+  .price-amount { font-family:var(--font-serif);font-size:2.4rem;font-weight:400;letter-spacing:-.04em; }
+  .price-period { color:var(--text-2);font-size:13px; }
+  .price-annual { font-size:12px;color:var(--emerald);font-weight:700;margin-bottom:24px; }
+  .plan-divider { border:none;border-top:1px solid var(--border);margin-bottom:20px; }
+  .plan-features { list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:28px; }
+  .plan-features li { display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-2); }
+  .plan-features li.yes { color:var(--text-1); }
+  .feat-icon { font-size:14px;flex-shrink:0; }
+  .plan-select-btn { width:100%;padding:14px;border-radius:var(--radius-sm);font-size:14px;font-weight:800;border:1.5px solid var(--border-light);background:var(--surface-2);color:var(--text-1);cursor:pointer;transition:all .2s; }
+  .plan-card.selected .plan-select-btn { background:var(--emerald);color:#020a06;border-color:var(--emerald);box-shadow:0 0 20px rgba(0,230,118,.25); }
+  .plan-card:hover:not(.selected) .plan-select-btn { border-color:var(--border-light);background:var(--surface-3); }
+
+  /* ── Checkout ── */
+  .checkout-wrap { max-width:1000px;margin:0 auto;padding:40px;display:grid;grid-template-columns:1fr 380px;gap:32px; }
+  .checkout-main { display:flex;flex-direction:column;gap:24px; }
+  .checkout-sidebar { position:sticky;top:88px;height:fit-content; }
+  .order-card { background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);padding:28px; }
+  .order-title { font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);margin-bottom:20px; }
+  .order-plan { display:flex;align-items:center;gap:14px;padding:16px;background:var(--surface-2);border-radius:var(--radius-sm);margin-bottom:16px; }
+  .order-plan-icon { font-size:28px; }
+  .order-plan-name { font-family:var(--font-serif);font-size:1.1rem; }
+  .order-plan-sub { font-size:12px;color:var(--text-2); }
+  .order-line { display:flex;justify-content:space-between;font-size:14px;padding:8px 0;color:var(--text-2); }
+  .order-line strong { color:var(--text-1); }
+  .order-divider { border:none;border-top:1px solid var(--border);margin:12px 0; }
+  .order-total { display:flex;justify-content:space-between;font-size:16px;font-weight:800; }
+  .order-total-amount { font-family:var(--font-serif);font-size:1.5rem;color:var(--emerald); }
+  .security-badges { display:flex;flex-direction:column;gap:8px;margin-top:20px; }
+  .security-badge { display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3); }
+
+  /* ── Section card ── */
+  .section-card { background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);padding:28px; }
+  .section-card-title { font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);margin-bottom:20px; }
+
+  /* ── Payment method tabs ── */
+  .pay-tabs { display:flex;gap:8px;margin-bottom:20px; }
+  .pay-tab { padding:10px 18px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface-2);color:var(--text-2);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s; }
+  .pay-tab.active { border-color:var(--emerald);background:var(--emerald-glow);color:var(--emerald); }
+
+  /* ── Success page ── */
+  .success-wrap { max-width:640px;margin:0 auto;padding:80px 40px;text-align:center; }
+  .success-ring { width:120px;height:120px;border-radius:50%;border:2px solid var(--emerald);display:flex;align-items:center;justify-content:center;margin:0 auto 32px;position:relative;
+    box-shadow:0 0 60px rgba(0,230,118,.25),inset 0 0 40px rgba(0,230,118,.1);
+    animation:ring-in .6s cubic-bezier(.175,.885,.32,1.275) both;
+  }
+  @keyframes ring-in { from{transform:scale(.5);opacity:0} to{transform:scale(1);opacity:1} }
+  .success-checkmark { font-size:52px; }
+  .success-title { font-family:var(--font-serif);font-size:2.5rem;letter-spacing:-.04em;margin-bottom:16px;animation:fade-up .5s .2s both; }
+  .success-sub { color:var(--text-2);font-size:1rem;margin-bottom:40px;line-height:1.8;animation:fade-up .5s .3s both; }
+  @keyframes fade-up { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  .workspace-url-card { background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;margin-bottom:32px;text-align:left;animation:fade-up .5s .4s both; }
+  .url-label { font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);margin-bottom:10px; }
+  .url-value { font-family:var(--font-mono);font-size:1.1rem;color:var(--emerald);display:flex;align-items:center;justify-content:space-between; }
+  .copy-btn { background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:6px 12px;color:var(--text-2);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s; }
+  .copy-btn:hover { border-color:var(--emerald);color:var(--emerald); }
+  .next-steps { display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:36px;text-align:left;animation:fade-up .5s .5s both; }
+  .next-step-card { background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);padding:20px; }
+  .next-step-icon { font-size:24px;margin-bottom:10px; }
+  .next-step-title { font-size:14px;font-weight:800;margin-bottom:4px; }
+  .next-step-desc { font-size:12px;color:var(--text-2);line-height:1.6; }
+  .success-actions { display:flex;gap:12px;justify-content:center;animation:fade-up .5s .6s both; }
+
+  /* ── First-login wizard ── */
+  .wizard-wrap { max-width:800px;margin:0 auto;padding:40px; }
+  .wizard-head { text-align:center;margin-bottom:40px; }
+  .wizard-steps { display:flex;gap:8px;justify-content:center;margin-bottom:40px; }
+  .wstep { display:flex;align-items:center;gap:8px; }
+  .wstep-num { width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background:var(--surface-3);border:1.5px solid var(--border);color:var(--text-3);transition:all .3s; }
+  .wstep.active .wstep-num { background:var(--emerald);color:#020a06;border-color:var(--emerald);box-shadow:0 0 12px rgba(0,230,118,.3); }
+  .wstep.done .wstep-num { background:var(--surface-3);color:var(--emerald);border-color:var(--emerald); }
+  .wstep-label { font-size:12px;font-weight:700;color:var(--text-3); }
+  .wstep.active .wstep-label { color:var(--text-1); }
+  .wstep-sep { width:32px;height:1px;background:var(--border); }
+
+  /* ── Upload zone ── */
+  .upload-zone { border:2px dashed var(--border);border-radius:var(--radius);padding:40px;text-align:center;cursor:pointer;transition:all .2s; }
+  .upload-zone:hover { border-color:var(--emerald-dim);background:rgba(0,230,118,.04); }
+  .upload-icon { font-size:40px;margin-bottom:12px; }
+  .upload-hint { font-size:13px;color:var(--text-2); }
+
+  /* ── Team invite ── */
+  .invite-row { display:flex;gap:10px;margin-bottom:10px; }
+  .invite-row .input { flex:1; }
+  .role-select { padding:12px 14px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);font-size:13px;font-weight:600;outline:none;min-width:130px; }
+
+  /* ── Checklist ── */
+  .checklist { display:flex;flex-direction:column;gap:10px; }
+  .check-item { display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);transition:all .15s; }
+  .check-item.done { border-color:rgba(0,230,118,.3);background:rgba(0,230,118,.05); }
+  .check-icon { font-size:20px;flex-shrink:0; }
+  .check-text { flex:1;font-size:14px;font-weight:600; }
+  .check-status { font-size:12px;font-weight:700; }
+  .check-item.done .check-status { color:var(--emerald); }
+  .check-item:not(.done) .check-status { color:var(--text-3); }
+
+  /* ── Alert bar ── */
+  .alert-bar { padding:12px 20px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px; }
+  .alert-bar.success { background:rgba(0,230,118,.12);border:1px solid rgba(0,230,118,.25);color:var(--emerald); }
+  .alert-bar.error { background:rgba(255,71,87,.12);border:1px solid rgba(255,71,87,.25);color:#ff4757; }
+  .alert-bar.info { background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.25);color:var(--sky); }
+
+  /* ── Misc ── */
+  .text-emerald { color:var(--emerald); }
+  .text-muted { color:var(--text-2); }
+  .text-xs { font-size:12px; }
+  .mono { font-family:var(--font-mono); }
+  .hidden { display:none!important; }
+  .loading-spinner { display:inline-block;width:18px;height:18px;border:2px solid rgba(0,230,118,.3);border-top-color:var(--emerald);border-radius:50%;animation:spin .7s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .progress-bar { height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:4px; }
+  .progress-fill { height:100%;background:var(--emerald);border-radius:2px;transition:width .5s ease; }
+  .terms-check { display:flex;align-items:flex-start;gap:12px;margin-top:4px; }
+  .terms-check input[type=checkbox] { width:16px;height:16px;margin-top:2px;accent-color:var(--emerald);cursor:pointer;flex-shrink:0; }
+  .terms-check label { font-size:13px;color:var(--text-2);line-height:1.6; }
+
+  @media (max-width:768px) {
+    .site-header { padding:14px 20px; }
+    .plans-grid { grid-template-columns:1fr; }
+    .checkout-wrap { grid-template-columns:1fr; }
+    .checkout-sidebar { position:static; }
+    .field-row, .field-row-3 { grid-template-columns:1fr; }
+    .form-wrap, .plans-wrap, .checkout-wrap, .wizard-wrap { padding:20px; }
+    .plans-head h1 { font-size:2rem; }
+    .next-steps { grid-template-columns:1fr; }
+    .step-bar { padding:24px 20px 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-canvas">
+  <div class="bg-orb"></div>
+  <div class="bg-orb"></div>
+  <div class="bg-orb"></div>
+</div>
+<div class="bg-grid"></div>
+
+<!-- ─── HEADER ─────────────────────────────────────────── -->
+<header class="site-header">
+  <div class="logo">
+    <div class="logo-mark">🏗</div>
+    <span class="logo-text">Realesso</span>
+  </div>
+  <div class="header-actions">
+    <a href="#" class="header-link">Pricing</a>
+    <a href="#" class="header-link">Features</a>
+    <button class="btn btn-ghost" onclick="window.location.href='/login'">Sign In</button>
+    <button class="btn btn-primary" onclick="showPage('plans')">Get Started</button>
+  </div>
+</header>
+
+<!-- ═══ PAGE: PLANS ═══════════════════════════════════════ -->
+<div id="page-plans" class="page active">
+  <div class="plans-wrap">
+    <div class="plans-head">
+      <h1>Choose your <em>plan</em></h1>
+      <p>All plans include 14-day free trial. No credit card required to start.</p>
+      <div class="billing-toggle">
+        <label id="lbl-monthly" class="active" onclick="setBilling('monthly')">Monthly</label>
+        <div class="toggle-switch" id="billing-toggle" onclick="toggleBilling()"></div>
+        <label id="lbl-yearly" onclick="setBilling('yearly')">Yearly <span class="save-badge">Save 17%</span></label>
+      </div>
+    </div>
+
+    <div class="plans-grid">
+      <!-- Starter -->
+      <div class="plan-card" id="card-starter" onclick="selectPlan('starter')">
+        <span class="plan-icon">🌱</span>
+        <div class="plan-name">Starter</div>
+        <div class="plan-tagline">Perfect for small builders</div>
+        <div class="plan-price">
+          <span class="price-amount" id="price-starter">₹4,999</span>
+          <span class="price-period">/month</span>
+        </div>
+        <div class="price-annual" id="annual-starter">&nbsp;</div>
+        <hr class="plan-divider" />
+        <ul class="plan-features">
+          <li class="yes"><span class="feat-icon">✓</span>10 team members</li>
+          <li class="yes"><span class="feat-icon">✓</span>3 projects</li>
+          <li class="yes"><span class="feat-icon">✓</span>500 leads/month</li>
+          <li class="yes"><span class="feat-icon">✓</span>Lead CRM & Pipeline</li>
+          <li class="yes"><span class="feat-icon">✓</span>Site Visit Management</li>
+          <li class="yes"><span class="feat-icon">✓</span>Booking System</li>
+          <li><span class="feat-icon">✗</span>Payment Management</li>
+          <li><span class="feat-icon">✗</span>Channel Partners</li>
+          <li><span class="feat-icon">✗</span>AI Insights</li>
+        </ul>
+        <button class="plan-select-btn" id="btn-starter">Select Starter</button>
+      </div>
+
+      <!-- Growth (popular) -->
+      <div class="plan-card popular" id="card-growth" onclick="selectPlan('growth')">
+        <div class="popular-badge">⭐ Most Popular</div>
+        <span class="plan-icon">🚀</span>
+        <div class="plan-name">Growth</div>
+        <div class="plan-tagline">For growing real estate teams</div>
+        <div class="plan-price">
+          <span class="price-amount" id="price-growth">₹14,999</span>
+          <span class="price-period">/month</span>
+        </div>
+        <div class="price-annual" id="annual-growth">&nbsp;</div>
+        <hr class="plan-divider" />
+        <ul class="plan-features">
+          <li class="yes"><span class="feat-icon">✓</span>25 team members</li>
+          <li class="yes"><span class="feat-icon">✓</span>10 projects</li>
+          <li class="yes"><span class="feat-icon">✓</span>2,000 leads/month</li>
+          <li class="yes"><span class="feat-icon">✓</span>All Starter features</li>
+          <li class="yes"><span class="feat-icon">✓</span>Payment Management</li>
+          <li class="yes"><span class="feat-icon">✓</span>Channel Partner Portal</li>
+          <li class="yes"><span class="feat-icon">✓</span>Document Vault & KYC</li>
+          <li class="yes"><span class="feat-icon">✓</span>Custom Domain</li>
+          <li><span class="feat-icon">✗</span>AI Insights</li>
+        </ul>
+        <button class="plan-select-btn" id="btn-growth">Select Growth</button>
+      </div>
+
+      <!-- Enterprise -->
+      <div class="plan-card" id="card-enterprise" onclick="selectPlan('enterprise')">
+        <span class="plan-icon">🏆</span>
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-tagline">For large builders & groups</div>
+        <div class="plan-price">
+          <span class="price-amount" id="price-enterprise">₹39,999</span>
+          <span class="price-period">/month</span>
+        </div>
+        <div class="price-annual" id="annual-enterprise">&nbsp;</div>
+        <hr class="plan-divider" />
+        <ul class="plan-features">
+          <li class="yes"><span class="feat-icon">✓</span>Unlimited users</li>
+          <li class="yes"><span class="feat-icon">✓</span>Unlimited projects</li>
+          <li class="yes"><span class="feat-icon">✓</span>Unlimited leads</li>
+          <li class="yes"><span class="feat-icon">✓</span>All Growth features</li>
+          <li class="yes"><span class="feat-icon">✓</span>AI Lead Scoring</li>
+          <li class="yes"><span class="feat-icon">✓</span>Marketing Automation</li>
+          <li class="yes"><span class="feat-icon">✓</span>White-label branding</li>
+          <li class="yes"><span class="feat-icon">✓</span>Dedicated CSM</li>
+          <li class="yes"><span class="feat-icon">✓</span>24/7 phone support</li>
+        </ul>
+        <button class="plan-select-btn" id="btn-enterprise">Select Enterprise</button>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:28px;">
+      <p class="text-muted text-xs">🔒 256-bit SSL encryption &nbsp;·&nbsp; 💰 30-day money-back guarantee &nbsp;·&nbsp; 🤝 Cancel anytime</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE: SIGNUP ══════════════════════════════════════ -->
+<div id="page-signup" class="page">
+  <div id="signup-step-bar" class="step-bar">
+    <div class="step-item active" id="sbar-0"><div class="step-node">1</div><div class="step-label">Account</div></div>
+    <div class="step-item" id="sbar-1"><div class="step-node">2</div><div class="step-label">Business</div></div>
+    <div class="step-item" id="sbar-2"><div class="step-node">3</div><div class="step-label">Workspace</div></div>
+    <div class="step-item" id="sbar-3"><div class="step-node">4</div><div class="step-label">Verify</div></div>
+  </div>
+
+  <!-- Step 0: Account Details -->
+  <div id="signup-0" class="form-wrap">
+    <div class="form-card">
+      <div class="form-head">
+        <div class="form-head-title">Create your account</div>
+        <div class="form-head-sub">You're signing up for <span id="chosen-plan-label" class="text-emerald">Growth Plan</span></div>
+      </div>
+      <div class="form-body">
+        <div class="field field-row">
+          <div>
+            <label>Owner / MD Full Name *</label>
+            <input class="input" id="f-owner" type="text" placeholder="Rajesh Sharma" oninput="clearErr('f-owner')" />
+            <div class="error-msg hidden" id="err-owner"></div>
+          </div>
+          <div>
+            <label>Company Name *</label>
+            <input class="input" id="f-company" type="text" placeholder="Sunrise Builders Pvt Ltd" oninput="onCompanyInput()" />
+            <div class="error-msg hidden" id="err-company"></div>
+          </div>
+        </div>
+        <div class="field field-row">
+          <div>
+            <label>Work Email *</label>
+            <input class="input" id="f-email" type="email" placeholder="owner@company.com" oninput="clearErr('f-email')" />
+            <div class="error-msg hidden" id="err-email"></div>
+          </div>
+          <div>
+            <label>Mobile Number *</label>
+            <div class="input-prefix">
+              <span class="prefix-text">🇮🇳 +91</span>
+              <input class="input" id="f-phone" type="tel" placeholder="98765 43210" maxlength="10" oninput="clearErr('f-phone')" />
+            </div>
+            <div class="error-msg hidden" id="err-phone"></div>
+          </div>
+        </div>
+        <div class="field field-row">
+          <div>
+            <label>Password *</label>
+            <input class="input" id="f-password" type="password" placeholder="Min 8 chars" oninput="checkPassword()" />
+            <div class="pw-strength" id="pw-strength-wrap">
+              <div class="pw-bars">
+                <div class="pw-bar" id="pwb0"></div>
+                <div class="pw-bar" id="pwb1"></div>
+                <div class="pw-bar" id="pwb2"></div>
+                <div class="pw-bar" id="pwb3"></div>
+              </div>
+              <div class="pw-label" id="pw-label">Enter a strong password</div>
+            </div>
+            <div class="error-msg hidden" id="err-password"></div>
+          </div>
+          <div>
+            <label>Confirm Password *</label>
+            <input class="input" id="f-confirm" type="password" placeholder="Re-enter password" oninput="clearErr('f-confirm')" />
+            <div class="error-msg hidden" id="err-confirm"></div>
+          </div>
+        </div>
+        <div class="terms-check">
+          <input type="checkbox" id="f-terms" />
+          <label for="f-terms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>. By signing up you confirm you are authorized to create a company account.</label>
+        </div>
+        <div class="error-msg hidden" id="err-terms" style="margin-top:4px;"></div>
+      </div>
+      <div class="form-footer">
+        <button class="btn btn-ghost" onclick="showPage('plans')">← Change Plan</button>
+        <button class="btn btn-primary" onclick="signupStep0Next()">Continue →</button>
+      </div>
+    </div>
+    <p style="text-align:center;margin-top:16px;font-size:13px;" class="text-muted">Already have an account? <a href="/login">Sign in →</a></p>
+  </div>
+
+  <!-- Step 1: Business Details -->
+  <div id="signup-1" class="form-wrap hidden">
+    <div class="form-card">
+      <div class="form-head">
+        <div class="form-head-title">Tell us about your business</div>
+        <div class="form-head-sub">Helps us personalise your CRM experience</div>
+      </div>
+      <div class="form-body">
+        <div class="field field-row">
+          <div>
+            <label>City *</label>
+            <input class="input" id="f-city" type="text" placeholder="Mumbai" />
+          </div>
+          <div>
+            <label>State *</label>
+            <input class="input" id="f-state" type="text" placeholder="Maharashtra" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Industry Type *</label>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;" id="industry-chips">
+            <button class="chip-btn" data-val="Residential Real Estate" onclick="selectChip(this,'industry')">Residential</button>
+            <button class="chip-btn" data-val="Commercial Real Estate" onclick="selectChip(this,'industry')">Commercial</button>
+            <button class="chip-btn" data-val="Mixed-Use Development" onclick="selectChip(this,'industry')">Mixed-Use</button>
+            <button class="chip-btn" data-val="Township Development" onclick="selectChip(this,'industry')">Township</button>
+            <button class="chip-btn" data-val="Luxury Real Estate" onclick="selectChip(this,'industry')">Luxury</button>
+            <button class="chip-btn" data-val="Affordable Housing" onclick="selectChip(this,'industry')">Affordable Housing</button>
+          </div>
+          <div class="error-msg hidden" id="err-industry"></div>
+        </div>
+        <div class="field">
+          <label>Company Size *</label>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;" id="size-chips">
+            <button class="chip-btn" data-val="1–5" onclick="selectChip(this,'size')">1–5</button>
+            <button class="chip-btn" data-val="6–15" onclick="selectChip(this,'size')">6–15</button>
+            <button class="chip-btn" data-val="16–50" onclick="selectChip(this,'size')">16–50</button>
+            <button class="chip-btn" data-val="51–150" onclick="selectChip(this,'size')">51–150</button>
+            <button class="chip-btn" data-val="150+" onclick="selectChip(this,'size')">150+</button>
+          </div>
+          <div class="error-msg hidden" id="err-size"></div>
+        </div>
+        <div class="field">
+          <label>Expected CRM Users *</label>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;" id="users-chips">
+            <button class="chip-btn" data-val="1–5" onclick="selectChip(this,'users')">1–5 users</button>
+            <button class="chip-btn" data-val="6–15" onclick="selectChip(this,'users')">6–15 users</button>
+            <button class="chip-btn" data-val="16–30" onclick="selectChip(this,'users')">16–30 users</button>
+            <button class="chip-btn" data-val="30+" onclick="selectChip(this,'users')">30+ users</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Primary Business Type *</label>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;" id="btype-chips">
+            <button class="chip-btn" data-val="Builder / Developer" onclick="selectChip(this,'btype')">Builder / Developer</button>
+            <button class="chip-btn" data-val="Real Estate Agency" onclick="selectChip(this,'btype')">Real Estate Agency</button>
+            <button class="chip-btn" data-val="Marketing Company" onclick="selectChip(this,'btype')">Marketing Company</button>
+            <button class="chip-btn" data-val="Property Consultant" onclick="selectChip(this,'btype')">Consultant</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-footer">
+        <button class="btn btn-ghost" onclick="gotoSignupStep(0)">← Back</button>
+        <button class="btn btn-primary" onclick="signupStep1Next()">Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Workspace / Domain -->
+  <div id="signup-2" class="form-wrap hidden">
+    <div class="form-card">
+      <div class="form-head">
+        <div class="form-head-title">Set up your workspace</div>
+        <div class="form-head-sub">Choose your unique workspace URL — this cannot be changed later</div>
+      </div>
+      <div class="form-body">
+        <div class="field">
+          <label>Workspace Subdomain *</label>
+          <div class="input-suffix">
+            <input class="input" id="f-subdomain" type="text" placeholder="yourcompany" oninput="onSubdomainInput()" />
+            <span class="suffix-text">.realesso.com</span>
+          </div>
+          <div class="subdomain-check hidden" id="subdomain-ok">✓ Available — https://<span id="subdomain-preview"></span>.realesso.com</div>
+          <div class="subdomain-check err hidden" id="subdomain-err">✗ <span id="subdomain-err-msg">Subdomain taken</span></div>
+          <div class="error-msg hidden" id="err-subdomain"></div>
+        </div>
+        <div class="field">
+          <label>Custom Domain (Optional — configure after signup)</label>
+          <input class="input" id="f-custom-domain" type="text" placeholder="crm.yourcompany.com" />
+          <div class="text-muted text-xs" style="margin-top:6px;">You can connect a custom domain from Settings after your workspace is created.</div>
+        </div>
+        <div class="field">
+          <label>Referral Code (Optional)</label>
+          <input class="input" id="f-referral" type="text" placeholder="e.g. PARTNER2024" />
+        </div>
+        <div id="workspace-preview-card" class="alert-bar info hidden" style="margin-top:4px;">
+          🌐 Your CRM will be live at: <strong class="mono" id="ws-preview-url"></strong>
+        </div>
+      </div>
+      <div class="form-footer">
+        <button class="btn btn-ghost" onclick="gotoSignupStep(1)">← Back</button>
+        <button class="btn btn-primary" id="btn-workspace-next" onclick="signupStep2Next()">Proceed to Payment →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Email / OTP Verification -->
+  <div id="signup-3" class="form-wrap hidden">
+    <div class="form-card">
+      <div class="form-head">
+        <div class="form-head-title">Verify your email</div>
+        <div class="form-head-sub">We sent a 6-digit code to <strong id="otp-email-display" class="text-emerald"></strong></div>
+      </div>
+      <div class="form-body" style="text-align:center;padding-top:40px;padding-bottom:40px;">
+        <div class="otp-row" id="otp-row">
+          <input class="otp-input" maxlength="1" oninput="otpMove(this,0)" onkeydown="otpBack(this,0)" />
+          <input class="otp-input" maxlength="1" oninput="otpMove(this,1)" onkeydown="otpBack(this,1)" />
+          <input class="otp-input" maxlength="1" oninput="otpMove(this,2)" onkeydown="otpBack(this,2)" />
+          <input class="otp-input" maxlength="1" oninput="otpMove(this,3)" onkeydown="otpBack(this,3)" />
+          <input class="otp-input" maxlength="1" oninput="otpMove(this,4)" onkeydown="otpBack(this,4)" />
+          <input class="otp-input" maxlength="1" oninput="otpMove(this,5)" onkeydown="otpBack(this,5)" />
+        </div>
+        <div id="otp-status" class="text-muted text-xs" style="margin-top:16px;margin-bottom:24px;">Didn't receive it? <a href="#" onclick="resendOtp()">Resend code</a> <span id="otp-timer" class="text-muted">(60s)</span></div>
+        <div class="alert-bar error hidden" id="otp-error">❌ Incorrect code. Please try again.</div>
+        <div class="alert-bar success hidden" id="otp-success">✅ Email verified! Redirecting to checkout...</div>
+      </div>
+      <div class="form-footer" style="justify-content:center;">
+        <button class="btn btn-primary btn-full" id="btn-verify-otp" onclick="verifyOtp()" style="max-width:300px;">Verify & Continue →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE: CHECKOUT ════════════════════════════════════ -->
+<div id="page-checkout" class="page">
+  <div class="step-bar">
+    <div class="step-item done"><div class="step-node">✓</div><div class="step-label">Account</div></div>
+    <div class="step-item done"><div class="step-node">✓</div><div class="step-label">Workspace</div></div>
+    <div class="step-item active"><div class="step-node">3</div><div class="step-label">Payment</div></div>
+    <div class="step-item"><div class="step-node">4</div><div class="step-label">Launch</div></div>
+  </div>
+  <div class="checkout-wrap">
+    <div class="checkout-main">
+      <!-- Billing info -->
+      <div class="section-card">
+        <div class="section-card-title">📋 Billing Information</div>
+        <div class="field field-row">
+          <div>
+            <label>Full Name *</label>
+            <input class="input" id="c-name" placeholder="As per bank records" />
+          </div>
+          <div>
+            <label>Email *</label>
+            <input class="input" id="c-email" type="email" placeholder="billing@company.com" />
+          </div>
+        </div>
+        <div class="field field-row">
+          <div>
+            <label>GST Number (Optional)</label>
+            <input class="input" id="c-gst" placeholder="22AAAAA0000A1Z5" />
+          </div>
+          <div>
+            <label>PAN (for amounts ≥₹50,000)</label>
+            <input class="input" id="c-pan" placeholder="ABCDE1234F" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment method -->
+      <div class="section-card">
+        <div class="section-card-title">💳 Payment Method</div>
+        <div class="pay-tabs">
+          <button class="pay-tab active" onclick="setPayTab(this,'razorpay')">🔐 Razorpay (Secure)</button>
+          <button class="pay-tab" onclick="setPayTab(this,'upi')">📱 UPI</button>
+          <button class="pay-tab" onclick="setPayTab(this,'netbanking')">🏦 Net Banking</button>
+        </div>
+        <div id="pay-razorpay">
+          <div class="alert-bar info">
+            🔒 You'll be redirected to Razorpay's secure checkout page. Supports all cards, UPI, net banking and wallets.
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 24'%3E%3Crect fill='%231a73e8' width='80' height='24' rx='4'/%3E%3Ctext fill='white' x='40' y='16' text-anchor='middle' font-size='10' font-weight='bold'%3EVISA%3C/text%3E%3C/svg%3E" height="28" alt="Visa" style="border-radius:4px;" />
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 24'%3E%3Crect fill='%23eb001b' width='40' height='24' rx='4'/%3E%3Crect fill='%23f79e1b' x='40' width='40' height='24' rx='4'/%3E%3Ccircle cx='40' cy='12' r='8' fill='%23ff5f00'/%3E%3C/svg%3E" height="28" alt="Mastercard" style="border-radius:4px;" />
+            <span style="padding:4px 12px;background:var(--surface-2);border-radius:4px;font-size:12px;font-weight:700;color:var(--sky);">UPI</span>
+            <span style="padding:4px 12px;background:var(--surface-2);border-radius:4px;font-size:12px;font-weight:700;color:#ffb347;">GPay</span>
+            <span style="padding:4px 12px;background:var(--surface-2);border-radius:4px;font-size:12px;font-weight:700;color:#a78bfa;">PhonePe</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coupon code -->
+      <div class="section-card">
+        <div class="section-card-title">🏷 Coupon Code</div>
+        <div style="display:flex;gap:10px;">
+          <input class="input" id="c-coupon" placeholder="Enter coupon code" style="flex:1;" />
+          <button class="btn btn-outline" onclick="applyCoupon()">Apply</button>
+        </div>
+        <div class="alert-bar success hidden" id="coupon-ok" style="margin-top:10px;">🎉 Coupon applied! 20% discount added.</div>
+        <div class="alert-bar error hidden" id="coupon-err" style="margin-top:10px;">❌ Invalid coupon code.</div>
+      </div>
+
+      <button class="btn btn-primary btn-primary-lg btn-full" id="btn-pay" onclick="initiatePayment()">
+        <span id="pay-btn-text">🔐 Pay Securely via Razorpay</span>
+        <span id="pay-btn-spinner" class="loading-spinner hidden"></span>
+      </button>
+
+      <p class="text-muted text-xs" style="text-align:center;">
+        By completing payment you agree to our <a href="#">Terms</a>. 30-day money-back guarantee on all plans.
+      </p>
+    </div>
+
+    <!-- Order summary sidebar -->
+    <div class="checkout-sidebar">
+      <div class="order-card">
+        <div class="order-title">📦 Order Summary</div>
+        <div class="order-plan">
+          <div class="order-plan-icon" id="order-icon">🚀</div>
+          <div>
+            <div class="order-plan-name" id="order-name">Growth Plan</div>
+            <div class="order-plan-sub" id="order-cycle">Billed Yearly</div>
+          </div>
+        </div>
+        <div class="order-line"><span>Base price</span><strong id="order-base">₹1,49,990</strong></div>
+        <div class="order-line" id="discount-line" style="display:none;"><span>Discount (20%)</span><strong id="order-discount" style="color:var(--emerald);">–₹29,998</strong></div>
+        <div class="order-line"><span>GST (18%)</span><strong id="order-gst">₹26,998</strong></div>
+        <hr class="order-divider" />
+        <div class="order-total"><span>Total Due</span><span class="order-total-amount" id="order-total">₹1,76,988</span></div>
+        <hr class="order-divider" />
+        <div style="font-size:12px;color:var(--text-3);line-height:1.7;">
+          <div>📅 Next billing: <span id="order-next-billing">—</span></div>
+          <div>🔄 Auto-renews until cancelled</div>
+        </div>
+        <div class="security-badges">
+          <div class="security-badge">🔒 256-bit SSL encrypted</div>
+          <div class="security-badge">💰 30-day money-back guarantee</div>
+          <div class="security-badge">🛡 PCI DSS compliant</div>
+          <div class="security-badge">📧 Instant activation email</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE: SUCCESS ══════════════════════════════════════ -->
+<div id="page-success" class="page">
+  <div class="success-wrap">
+    <div class="success-ring"><span class="success-checkmark">🎉</span></div>
+    <h1 class="success-title">You're all set, <em id="success-name">Rajesh</em>!</h1>
+    <p class="success-sub">
+      Your <strong>Realesso CRM workspace</strong> is being set up.<br />
+      You'll receive login credentials at <strong class="text-emerald" id="success-email">owner@company.com</strong> within 5 minutes.
+    </p>
+    <div class="workspace-url-card">
+      <div class="url-label">Your Workspace URL</div>
+      <div class="url-value">
+        <span class="text-emerald mono" id="success-url">https://skyline.realesso.com</span>
+        <button class="copy-btn" onclick="copyUrl()">📋 Copy</button>
+      </div>
+    </div>
+    <div class="next-steps">
+      <div class="next-step-card"><div class="next-step-icon">🏗</div><div class="next-step-title">Add your first project</div><div class="next-step-desc">Set up towers, floors and units in under 5 minutes</div></div>
+      <div class="next-step-card"><div class="next-step-icon">👥</div><div class="next-step-title">Invite your team</div><div class="next-step-desc">Add agents, managers and finance staff</div></div>
+      <div class="next-step-card"><div class="next-step-icon">🎯</div><div class="next-step-title">Import your leads</div><div class="next-step-desc">Upload existing leads from Excel in seconds</div></div>
+      <div class="next-step-card"><div class="next-step-icon">📱</div><div class="next-step-title">Get the mobile app</div><div class="next-step-desc">Stay on top of leads from your phone</div></div>
+    </div>
+    <div class="success-actions">
+      <button class="btn btn-primary btn-primary-lg" onclick="showPage('wizard')">🚀 Launch My CRM</button>
+      <button class="btn btn-ghost" onclick="copyUrl()">📋 Copy URL</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE: FIRST-LOGIN WIZARD ══════════════════════════ -->
+<div id="page-wizard" class="page">
+  <div class="wizard-wrap">
+    <div class="wizard-head">
+      <h1 style="font-family:var(--font-serif);font-size:2rem;margin-bottom:8px;">Welcome to Realesso 👋</h1>
+      <p class="text-muted">Let's set up your workspace in 4 quick steps</p>
+    </div>
+    <div class="wizard-steps">
+      <div class="wstep active" id="wstep-0"><div class="wstep-num">1</div><div class="wstep-label">Profile</div></div>
+      <div class="wstep-sep"></div>
+      <div class="wstep" id="wstep-1"><div class="wstep-num">2</div><div class="wstep-label">Logo</div></div>
+      <div class="wstep-sep"></div>
+      <div class="wstep" id="wstep-2"><div class="wstep-num">3</div><div class="wstep-label">Project</div></div>
+      <div class="wstep-sep"></div>
+      <div class="wstep" id="wstep-3"><div class="wstep-num">4</div><div class="wstep-label">Team</div></div>
+    </div>
+
+    <!-- Wizard step 0: Company profile -->
+    <div id="wiz-0" class="form-card">
+      <div class="form-head">
+        <div class="form-head-title">Company Profile</div>
+        <div class="form-head-sub">This appears on receipts, agreements and customer emails</div>
+      </div>
+      <div class="form-body">
+        <div class="field field-row">
+          <div><label>Support Email</label><input class="input" placeholder="support@yourcompany.com" /></div>
+          <div><label>Support Phone</label><input class="input" placeholder="+91 98765 43210" /></div>
+        </div>
+        <div class="field field-row">
+          <div><label>GST Number</label><input class="input" placeholder="22AAAAA0000A1Z5" /></div>
+          <div><label>RERA Number</label><input class="input" placeholder="MH/RERA/xxxx" /></div>
+        </div>
+        <div class="field"><label>Company Address</label><textarea class="input" rows="2" placeholder="Head office address..." style="resize:vertical;"></textarea></div>
+        <div class="field field-row-3">
+          <div><label>City</label><input class="input" placeholder="Mumbai" /></div>
+          <div><label>State</label><input class="input" placeholder="Maharashtra" /></div>
+          <div><label>Pincode</label><input class="input" placeholder="400001" /></div>
+        </div>
+      </div>
+      <div class="form-footer">
+        <span class="text-muted text-xs">Step 1 of 4</span>
+        <button class="btn btn-primary" onclick="gotoWizStep(1)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Wizard step 1: Logo -->
+    <div id="wiz-1" class="form-card hidden">
+      <div class="form-head">
+        <div class="form-head-title">Upload Company Logo</div>
+        <div class="form-head-sub">Shown on receipts, agreements, email headers and app navbar</div>
+      </div>
+      <div class="form-body">
+        <div class="upload-zone" id="logo-zone" onclick="document.getElementById('logo-file').click()" ondrop="handleLogoDrop(event)" ondragover="event.preventDefault()">
+          <div id="logo-preview-wrap">
+            <div class="upload-icon">🖼</div>
+            <div style="font-weight:700;margin-bottom:8px;">Drag & drop or click to upload</div>
+            <div class="upload-hint">PNG or SVG recommended · Min 200×200px · Max 2MB</div>
+          </div>
+          <img id="logo-img-preview" src="" style="max-height:100px;display:none;border-radius:8px;" />
+        </div>
+        <input type="file" id="logo-file" accept="image/*" style="display:none;" onchange="previewLogo(this)" />
+        <div class="alert-bar info" style="margin-top:16px;">💡 A transparent PNG logo works best on both light and dark backgrounds</div>
+      </div>
+      <div class="form-footer">
+        <button class="btn btn-ghost" onclick="gotoWizStep(0)">← Back</button>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-ghost" onclick="gotoWizStep(2)">Skip for now</button>
+          <button class="btn btn-primary" onclick="gotoWizStep(2)">Save & Continue →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wizard step 2: First project -->
+    <div id="wiz-2" class="form-card hidden">
+      <div class="form-head">
+        <div class="form-head-title">Add your first project</div>
+        <div class="form-head-sub">You can add unlimited projects later. Let's start with one.</div>
+      </div>
+      <div class="form-body">
+        <div class="field field-row">
+          <div><label>Project Name *</label><input class="input" id="proj-name" placeholder="Sunrise Heights" /></div>
+          <div><label>RERA Number</label><input class="input" placeholder="MH/RERA/xxxx/2024" /></div>
+        </div>
+        <div class="field field-row">
+          <div><label>City</label><input class="input" placeholder="Pune" /></div>
+          <div><label>Project Type</label>
+            <select class="input" style="background:var(--surface-2);">
+              <option>Residential Apartments</option>
+              <option>Villas</option>
+              <option>Plotted Development</option>
+              <option>Commercial</option>
+              <option>Mixed Use</option>
+            </select>
+          </div>
+        </div>
+        <div class="field field-row">
+          <div><label>Total Units</label><input class="input" type="number" placeholder="250" /></div>
+          <div><label>Possession Date</label><input class="input" type="date" /></div>
+        </div>
+      </div>
+      <div class="form-footer">
+        <button class="btn btn-ghost" onclick="gotoWizStep(1)">← Back</button>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-ghost" onclick="gotoWizStep(3)">Skip for now</button>
+          <button class="btn btn-primary" onclick="gotoWizStep(3)">Save Project →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wizard step 3: Invite team -->
+    <div id="wiz-3" class="form-card hidden">
+      <div class="form-head">
+        <div class="form-head-title">Invite your team</div>
+        <div class="form-head-sub">Add teammates now or later from Users & Permissions</div>
+      </div>
+      <div class="form-body">
+        <div id="invite-rows">
+          <div class="invite-row">
+            <input class="input" type="email" placeholder="agent@company.com" />
+            <select class="role-select">
+              <option>Agent</option>
+              <option>Sales Manager</option>
+              <option>Finance</option>
+              <option>HR</option>
+              <option>Admin</option>
+            </select>
+            <button class="btn btn-ghost" onclick="this.closest('.invite-row').remove()">✕</button>
+          </div>
+        </div>
+        <button class="btn btn-ghost" style="margin-top:10px;" onclick="addInviteRow()">+ Add Another</button>
+
+        <div style="margin-top:28px;">
+          <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);margin-bottom:14px;">🎯 Setup Checklist</div>
+          <div class="checklist">
+            <div class="check-item done" id="chk-profile"><div class="check-icon">🏢</div><div class="check-text">Company profile configured</div><div class="check-status">Done ✓</div></div>
+            <div class="check-item done" id="chk-logo"><div class="check-icon">🖼</div><div class="check-text">Logo uploaded</div><div class="check-status">Done ✓</div></div>
+            <div class="check-item done" id="chk-project"><div class="check-icon">🏗</div><div class="check-text">First project created</div><div class="check-status">Done ✓</div></div>
+            <div class="check-item" id="chk-team"><div class="check-icon">👥</div><div class="check-text">Team members invited</div><div class="check-status">Pending</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="form-footer">
+        <button class="btn btn-ghost" onclick="gotoWizStep(2)">← Back</button>
+        <button class="btn btn-primary btn-primary-lg" onclick="finishWizard()">🚀 Launch My Dashboard</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.chip-btn {
+  padding:8px 16px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  color:var(--text-2);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;font-family:var(--font-sans);
+}
+.chip-btn:hover { border-color:var(--border-light);color:var(--text-1); }
+.chip-btn.selected { background:rgba(0,230,118,.12);border-color:var(--emerald);color:var(--emerald); }
+</style>
+
+<script>
+// ─── State ──────────────────────────────────────────────────────────────────
+const state = {
+  plan: 'growth',
+  billing: 'yearly',
+  formData: {},
+  otpTimer: null,
+  subdomainTimeout: null,
+  couponApplied: false,
+  couponDiscount: 0,
+};
+
+const PLANS = {
+  starter:    { name:'Starter',    icon:'🌱', monthly:4999,   yearly:49990  },
+  growth:     { name:'Growth',     icon:'🚀', monthly:14999,  yearly:149990 },
+  enterprise: { name:'Enterprise', icon:'🏆', monthly:39999,  yearly:399990 },
+};
+
+// ─── Page navigation ────────────────────────────────────────────────────────
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + p).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ─── Plan selection ──────────────────────────────────────────────────────────
+function selectPlan(plan) {
+  state.plan = plan;
+  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('card-' + plan).classList.add('selected');
+  showPage('signup');
+  gotoSignupStep(0);
+  document.getElementById('chosen-plan-label').textContent = PLANS[plan].name + ' Plan';
+  updateOrderSummary();
+}
+
+// ─── Billing toggle ──────────────────────────────────────────────────────────
+function toggleBilling() {
+  setBilling(state.billing === 'monthly' ? 'yearly' : 'monthly');
+}
+function setBilling(cycle) {
+  state.billing = cycle;
+  const tog = document.getElementById('billing-toggle');
+  tog.classList.toggle('monthly', cycle === 'monthly');
+  document.getElementById('lbl-monthly').classList.toggle('active', cycle === 'monthly');
+  document.getElementById('lbl-yearly').classList.toggle('active', cycle === 'yearly');
+  ['starter','growth','enterprise'].forEach(p => {
+    const plan = PLANS[p];
+    const price = cycle === 'monthly' ? plan.monthly : Math.round(plan.yearly / 12);
+    document.getElementById('price-' + p).textContent = '₹' + price.toLocaleString('en-IN');
+    document.getElementById('annual-' + p).textContent = cycle === 'yearly'
+      ? `Billed ₹${plan.yearly.toLocaleString('en-IN')}/year — save ${Math.round((1-plan.yearly/(plan.monthly*12))*100)}%`
+      : '';
+  });
+  updateOrderSummary();
+}
+
+// ─── Order summary ───────────────────────────────────────────────────────────
+function updateOrderSummary() {
+  const plan = PLANS[state.plan];
+  const isYearly = state.billing === 'yearly';
+  const base = isYearly ? plan.yearly : plan.monthly;
+  const after = state.couponApplied ? Math.round(base * (1 - state.couponDiscount)) : base;
+  const gst = Math.round(after * 0.18);
+  const total = after + gst;
+
+  document.getElementById('order-icon').textContent = plan.icon;
+  document.getElementById('order-name').textContent = plan.name + ' Plan';
+  document.getElementById('order-cycle').textContent = isYearly ? 'Billed Yearly' : 'Billed Monthly';
+  document.getElementById('order-base').textContent = '₹' + base.toLocaleString('en-IN');
+  document.getElementById('order-gst').textContent = '₹' + gst.toLocaleString('en-IN');
+  document.getElementById('order-total').textContent = '₹' + total.toLocaleString('en-IN');
+
+  const nextBill = new Date();
+  nextBill.setMonth(nextBill.getMonth() + (isYearly ? 12 : 1));
+  document.getElementById('order-next-billing').textContent = nextBill.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'});
+}
+
+// ─── Chip selectors ──────────────────────────────────────────────────────────
+const chipState = { industry:'', size:'', users:'', btype:'' };
+function selectChip(el, group) {
+  document.querySelectorAll(`#${group}-chips .chip-btn`).forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  chipState[group] = el.dataset.val;
+  document.getElementById('err-' + (group === 'btype' ? 'btype' : group))?.classList.add('hidden');
+}
+
+// ─── Auto-generate subdomain ─────────────────────────────────────────────────
+function onCompanyInput() {
+  clearErr('f-company');
+  const val = document.getElementById('f-company').value;
+  const slug = val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30);
+  document.getElementById('f-subdomain').value = slug;
+  if (slug) checkSubdomainAvailability(slug);
+  updateWorkspacePreview(slug);
+}
+function onSubdomainInput() {
+  const val = document.getElementById('f-subdomain').value.toLowerCase().replace(/[^a-z0-9-]+/g,'').replace(/^-|-$/g,'');
+  document.getElementById('f-subdomain').value = val;
+  clearTimeout(state.subdomainTimeout);
+  state.subdomainTimeout = setTimeout(() => checkSubdomainAvailability(val), 500);
+  updateWorkspacePreview(val);
+}
+function updateWorkspacePreview(slug) {
+  if (!slug) return;
+  document.getElementById('ws-preview-url').textContent = `https://${slug}.realesso.com`;
+  document.getElementById('workspace-preview-card').classList.remove('hidden');
+}
+
+async function checkSubdomainAvailability(slug) {
+  if (!slug || slug.length < 3) return;
+  try {
+    const res = await fetch('/api/v1/onboarding/check-subdomain', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subdomain: slug })
+    });
+    const resData = await res.json();
+    const ok = resData.data.available;
+    document.getElementById('subdomain-ok').classList.toggle('hidden', !ok);
+    document.getElementById('subdomain-err').classList.toggle('hidden', ok);
+    document.getElementById('subdomain-preview').textContent = slug;
+    
+    // Disable next button if taken
+    document.getElementById('btn-workspace-next').disabled = !ok;
+  } catch (err) {
+    console.error('Subdomain check failed', err);
+  }
+}
+
+// ─── Password strength ────────────────────────────────────────────────────────
+function checkPassword() {
+  const pw = document.getElementById('f-password').value;
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const labels = ['Too weak','Weak','Fair','Good','Strong'];
+  for (let i = 0; i < 4; i++) {
+    const bar = document.getElementById('pwb' + i);
+    bar.className = 'pw-bar' + (i < score ? ` filled-${score}` : '');
+  }
+  document.getElementById('pw-label').textContent = labels[score] || 'Too weak';
+}
+
+// ─── Signup navigation ────────────────────────────────────────────────────────
+function gotoSignupStep(step) {
+  for (let i = 0; i <= 3; i++) {
+    document.getElementById('signup-' + i)?.classList.add('hidden');
+    const bar = document.getElementById('sbar-' + i);
+    if (!bar) continue;
+    bar.classList.remove('active', 'done');
+    if (i < step) bar.classList.add('done'), (bar.querySelector('.step-node').textContent = '✓');
+    else if (i === step) bar.classList.add('active');
+    else bar.querySelector('.step-node').textContent = i + 1;
+  }
+  document.getElementById('signup-' + step)?.classList.remove('hidden');
+  window.scrollTo(0, 0);
+}
+
+function showErr(id, msg) { const el = document.getElementById('err-' + id); if (el) { el.textContent = msg; el.classList.remove('hidden'); } }
+function clearErr(id) { document.getElementById('err-' + id)?.classList.add('hidden'); const inp = document.getElementById('f-' + id) || document.getElementById('c-' + id); if (inp) inp.classList.remove('error'); }
+
+function signupStep0Next() {
+  let ok = true;
+  const ownerName = document.getElementById('f-owner').value.trim();
+  const companyName = document.getElementById('f-company').value.trim();
+  const email = document.getElementById('f-email').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
+  const password = document.getElementById('f-password').value;
+  const conf = document.getElementById('f-confirm').value;
+  const terms = document.getElementById('f-terms').checked;
+  
+  if (!ownerName) { showErr('owner', 'Name is required'); ok = false; }
+  if (!companyName) { showErr('company', 'Company name is required'); ok = false; }
+  if (!email.match(/^[^@]+@[^@]+\.[^@]+$/)) { showErr('email', 'Valid email required'); ok = false; }
+  if (!phone.match(/^\d{10}$/)) { showErr('phone', 'Enter valid 10-digit mobile number'); ok = false; }
+  if (password.length < 8) { showErr('password', 'Password must be at least 8 characters'); ok = false; }
+  if (password !== conf) { showErr('confirm', 'Passwords do not match'); ok = false; }
+  if (!terms) { showErr('terms', 'You must accept the Terms of Service'); ok = false; }
+  
+  if (ok) {
+    state.formData = { ownerName, companyName, email, phone, password };
+    gotoSignupStep(1);
+  }
+}
+
+function signupStep1Next() {
+  let ok = true;
+  if (!chipState.industry) { showErr('industry', 'Please select an industry type'); ok = false; }
+  if (!chipState.size) { showErr('size', 'Please select company size'); ok = false; }
+  if (ok) gotoSignupStep(2);
+}
+
+async function signupStep2Next() {
+  const sub = document.getElementById('f-subdomain').value.trim();
+  if (!sub || sub.length < 3) { showErr('subdomain', 'Subdomain must be at least 3 characters'); return; }
+  
+  state.formData.subdomain = sub;
+  state.formData.plan = state.plan;
+  state.formData.billingCycle = state.billing;
+
+  try {
+    const res = await fetch('/api/v1/onboarding/signup-init', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state.formData)
+    });
+    
+    if (!res.ok) {
+      const resData = await res.json();
+      // Assuming the API returns { success: false, message: "Error message" } on !res.ok
+      throw new Error(resData.message || 'Signup initialization failed');
+    }
+    
+    document.getElementById('otp-email-display').textContent = state.formData.email;
+    gotoSignupStep(3);
+    startOtpTimer();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
+
+// ─── OTP ─────────────────────────────────────────────────────────────────────
+function otpMove(input, idx) {
+  const inputs = document.querySelectorAll('.otp-input');
+  if (input.value && idx < 5) inputs[idx + 1].focus();
+}
+function otpBack(input, idx) {
+  const inputs = document.querySelectorAll('.otp-input');
+  if (event.key === 'Backspace' && !input.value && idx > 0) inputs[idx - 1].focus();
+}
+function startOtpTimer() {
+  let seconds = 60;
+  clearInterval(state.otpTimer);
+  state.otpTimer = setInterval(() => {
+    seconds--;
+    document.getElementById('otp-timer').textContent = `(${seconds}s)`;
+    if (seconds <= 0) { clearInterval(state.otpTimer); document.getElementById('otp-timer').textContent = ''; }
+  }, 1000);
+}
+
+async function resendOtp() {
+  try {
+    await fetch('/api/v1/onboarding/signup-init', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state.formData)
+    });
+    startOtpTimer();
+  } catch (err) {
+    console.error('Resend OTP failed', err);
+  }
+}
+
+async function verifyOtp() {
+  const inputs = document.querySelectorAll('.otp-input');
+  const code = Array.from(inputs).map(i => i.value).join('');
+  if (code.length < 6) return;
+
+  try {
+    const res = await fetch('/api/v1/onboarding/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: state.formData.email, otp: code })
+    });
+    
+    if (!res.ok) {
+       throw new Error('Invalid OTP');
+    }
+
+    document.getElementById('otp-success').classList.remove('hidden');
+    document.getElementById('otp-error').classList.add('hidden');
+    updateOrderSummary();
+    setTimeout(() => {
+      document.getElementById('c-name').value = state.formData.ownerName;
+      document.getElementById('c-email').value = state.formData.email;
+      showPage('checkout');
+    }, 1200);
+  } catch (err) {
+    document.getElementById('otp-error').classList.remove('hidden');
+  }
+}
+
+// ─── Checkout / Payment ───────────────────────────────────────────────────────
+function setPayTab(el, tab) {
+  document.querySelectorAll('.pay-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+function applyCoupon() {
+  const code = document.getElementById('c-coupon').value.trim().toUpperCase();
+  if (code === 'LAUNCH20' || code === 'SAVE20') {
+    state.couponApplied = true;
+    state.couponDiscount = 0.2;
+    document.getElementById('coupon-ok').classList.remove('hidden');
+    document.getElementById('coupon-err').classList.add('hidden');
+    document.getElementById('discount-line').style.display = 'flex';
+    updateOrderSummary();
+  } else {
+    document.getElementById('coupon-err').classList.remove('hidden');
+    document.getElementById('coupon-ok').classList.add('hidden');
+  }
+}
+
+async function initiatePayment() {
+  const btn = document.getElementById('btn-pay');
+  const txt = document.getElementById('pay-btn-text');
+  const spn = document.getElementById('pay-btn-spinner');
+  btn.disabled = true;
+  txt.classList.add('hidden');
+  spn.classList.remove('hidden');
+
+  // Razorpay flow
+  const plan = PLANS[state.plan];
+  const isYearly = state.billing === 'yearly';
+  const base = isYearly ? plan.yearly : plan.monthly;
+  const after = state.couponApplied ? Math.round(base * (1 - state.couponDiscount)) : base;
+  const gst = Math.round(after * 0.18);
+  const totalAmount = after + gst;
+
+  const options = {
+    key: 'rzp_test_SJvF2hSQlMzoaq',
+    amount: totalAmount * 100, // in paise
+    currency: 'INR',
+    name: 'Realesso CRM',
+    description: plan.name + ' Plan — ' + (isYearly ? 'Annual' : 'Monthly'),
+    image: 'https://realesso.com/logo.png',
+    prefill: {
+      name: document.getElementById('c-name').value || state.formData.ownerName,
+      email: document.getElementById('c-email').value || state.formData.email,
+      contact: state.formData.phone ? '91' + state.formData.phone : '',
+    },
+    theme: { color: '#00e676' },
+    handler: function(response) {
+      handlePaymentSuccess(response);
+    },
+    modal: {
+      ondismiss: function() {
+        btn.disabled = false;
+        txt.classList.remove('hidden');
+        spn.classList.add('hidden');
+      }
+    }
+  };
+
+  if (typeof Razorpay !== 'undefined') {
+    const rzp = new Razorpay(options);
+    rzp.open();
+  } else {
+    // For demo/dev environments where Razorpay might not load
+    console.warn('Razorpay SDK not loaded. Simulating success...');
+    handlePaymentSuccess({ 
+      razorpay_payment_id: 'pay_demo_' + Date.now(),
+      razorpay_order_id: 'order_demo_' + Date.now(),
+      razorpay_signature: 'manual_sig'
+    });
+  }
+}
+
+async function handlePaymentSuccess(response) {
+  try {
+    const payload = {
+      signupData: state.formData,
+      razorpay_payment_id: response.razorpay_payment_id,
+      razorpay_order_id: response.razorpay_order_id || 'manual_order_' + Date.now(),
+      razorpay_signature: response.razorpay_signature || 'manual_sig'
+    };
+
+    const res = await fetch('/api/v1/onboarding/activate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+       const resData = await res.json();
+       // Assuming the API returns { success: false, message: "Error message" } on !res.ok
+       throw new Error(resData.message || 'Tenant activation failed');
+    }
+
+    // Set success page data
+    const firstName = (state.formData.ownerName || 'there').split(' ')[0];
+    document.getElementById('success-name').textContent = firstName;
+    document.getElementById('success-email').textContent = state.formData.email || 'you@company.com';
+    document.getElementById('success-url').textContent = `https://${state.formData.subdomain || 'yourcompany'}.realesso.com`;
+    showPage('success');
+  } catch (err) {
+    alert('Activation failed: ' + err.message);
+    const btn = document.getElementById('btn-pay');
+    btn.disabled = false;
+    document.getElementById('pay-btn-text').classList.remove('hidden');
+    document.getElementById('pay-btn-spinner').classList.add('hidden');
+  }
+}
+
+function copyUrl() {
+  const url = document.getElementById('success-url')?.textContent || '';
+  navigator.clipboard?.writeText(url).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    if (btn) { btn.textContent = '✅ Copied!'; setTimeout(() => btn.textContent = '📋 Copy', 2000); }
+  });
+}
+
+// ─── First-login wizard ───────────────────────────────────────────────────────
+function gotoWizStep(step) {
+  for (let i = 0; i <= 3; i++) {
+    document.getElementById('wiz-' + i)?.classList.add('hidden');
+    const ws = document.getElementById('wstep-' + i);
+    if (!ws) continue;
+    ws.classList.remove('active', 'done');
+    if (i < step) ws.classList.add('done'), (ws.querySelector('.wstep-num').textContent = '✓');
+    else if (i === step) ws.classList.add('active');
+    else ws.querySelector('.wstep-num').textContent = i + 1;
+  }
+  document.getElementById('wiz-' + step)?.classList.remove('hidden');
+  window.scrollTo(0, 0);
+}
+
+function previewLogo(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('logo-img-preview').src = e.target.result;
+      document.getElementById('logo-img-preview').style.display = 'block';
+      document.getElementById('logo-preview-wrap').style.display = 'none';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+function handleLogoDrop(e) {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file) previewLogo({ files: [file] });
+}
+
+function addInviteRow() {
+  const row = document.createElement('div');
+  row.className = 'invite-row';
+  row.innerHTML = `<input class="input" type="email" placeholder="colleague@company.com" /><select class="role-select"><option>Agent</option><option>Sales Manager</option><option>Finance</option><option>HR</option><option>Admin</option></select><button class="btn btn-ghost" onclick="this.closest('.invite-row').remove()">✕</button>`;
+  document.getElementById('invite-rows').appendChild(row);
+}
+
+function finishWizard() {
+  document.getElementById('chk-team').classList.add('done');
+  document.getElementById('chk-team').querySelector('.check-status').textContent = 'Done ✓';
+  setTimeout(() => {
+    alert('🎉 All set! Your Realesso CRM dashboard is now loading...\n\nIn production this would redirect to your tenant dashboard.');
+  }, 500);
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+setBilling('yearly');
+</script>
+</body>
+</html>
