@@ -1,8 +1,16 @@
-import axios, { AxiosError } from "axios";
+import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from "axios";
 import { mockEndpoints } from "./mockData";
 
 // Priority: Env variable > ngrok URL > local backend
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+let API_URL = (import.meta as any).env?.VITE_API_URL || "http://localhost:5000/api/v1";
+
+// Robustness: Ensure API_URL ends with /api/v1 if not already present
+if (API_URL && !API_URL.includes('/api/v1')) {
+  // Remove trailing slash if present
+  API_URL = API_URL.replace(/\/$/, "");
+  API_URL = `${API_URL}/api/v1`;
+}
+
 let isBackendOffline = false;
 
 export const api = axios.create({
@@ -10,17 +18,16 @@ export const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 5000, // Short timeout to trigger mock quickly if server is slow
+  timeout: 10000, 
 });
 
 // Function to check if we should use mock data
 const shouldFallbackToMock = (error: any) => {
-  // If no response, it's a network error (server down, ngrok off)
   return !error.response || error.code === 'ECONNABORTED' || error.message === 'Network Error';
 };
 
 // Add token and tenant ID to headers if logged in
-api.interceptors.request.use((config) => {
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = localStorage.getItem("token");
   const user = localStorage.getItem("user");
   
@@ -44,10 +51,11 @@ api.interceptors.request.use((config) => {
 
 // Response interceptor for 401s and Mock Fallback
 api.interceptors.response.use(
-  (response) => {
-    isBackendOffline = false; // Reset if we get a success
+  (response: AxiosResponse) => {
+    isBackendOffline = false;
     return response;
   },
+
   async (error: AxiosError) => {
     // Check if it's a 401
     if (error.response && error.response.status === 401) {
@@ -64,25 +72,29 @@ api.interceptors.response.use(
       console.warn("Backend appears to be offline. Switching to Mock API...");
       
       const { url, method } = error.config || {};
-      if (url && (method === 'get' || method === 'GET')) {
-        // Find best matching mock endpoint
-        const cleanUrl = url.split('?')[0]; // Remove query params
+      const lowerMethod = method?.toLowerCase();
+      
+      if (url) {
+        const cleanUrl = url.split('?')[0];
         const mockResponse = mockEndpoints[cleanUrl] || mockEndpoints[Object.keys(mockEndpoints).find(k => cleanUrl.includes(k)) || ''];
         
         if (mockResponse) {
-          console.log(`[Mock API] Returning data for: ${url}`);
-          return {
-            data: { success: true, data: mockResponse },
-            status: 200,
-            statusText: "OK",
-            headers: {},
-            config: error.config,
-          };
+          // Special case: If it's a login/profile request, we always return the mock data regardless of method
+          if (cleanUrl.includes('/auth/') || lowerMethod === 'get') {
+            console.log(`[Mock API] Returning specific data for: ${url}`);
+            return {
+              data: { success: true, data: mockResponse },
+              status: 200,
+              statusText: "OK",
+              headers: {},
+              config: error.config,
+            };
+          }
         }
       }
       
-      // For non-GET requests, we just return a generic success for mock
-      if (method && ['post', 'put', 'delete'].includes(method.toLowerCase())) {
+      // For other non-GET requests, return generic success
+      if (lowerMethod && ['post', 'put', 'delete'].includes(lowerMethod)) {
           return {
             data: { success: true, message: "Action performed (Mock)" },
             status: 200,
@@ -91,6 +103,7 @@ api.interceptors.response.use(
             config: error.config,
           };
       }
+
     }
 
     return Promise.reject(error);

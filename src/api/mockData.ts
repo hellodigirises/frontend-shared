@@ -49,10 +49,26 @@ export const mockDashboardData = {
   ]
 };
 
+export const mockLoginResponse = {
+  accessToken: 'mock-jwt-token',
+  user: {
+    id: 'u1',
+    name: 'John Doe (Mock)',
+    email: 'john@example.com',
+    role: 'ADMIN',
+    tenantId: 't1'
+  }
+};
+
+export const mockProfileResponse = mockLoginResponse.user;
+
 // Map of common API endpoints to their mock responses
 export const mockEndpoints: Record<string, any> = {
+  '/auth/login': mockLoginResponse,
+  '/auth/profile': mockProfileResponse,
   '/users': { data: mockUsers, total: mockUsers.length },
   '/users/available-roles': mockRoles,
   '/tenants': mockTenants,
   '/dashboard/stats': mockDashboardData,
 };
+
