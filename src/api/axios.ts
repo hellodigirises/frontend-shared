@@ -17,9 +17,11 @@ export const api = axios.create({
   baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true",
   },
   timeout: 10000, 
 });
+
 
 // Function to check if we should use mock data
 const shouldFallbackToMock = (error: any) => {

@@ -7,9 +7,13 @@ const cleanBaseUrl = BASE_URL.replace(/\/$/, "");
 
 export const salesApi = axios.create({
   baseURL: `${cleanBaseUrl}/api/v1/sales`,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 
+    'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
+  },
   timeout: 30_000,
 });
+
 
 applyMockFallback(salesApi);
 
