@@ -94,27 +94,47 @@ const StaffOnboardingPage: React.FC = () => {
   }, [id]);
 
   const fetchMetadata = async () => {
+    // 1. Fallback Roles (safety net if API fails)
+    const FALLBACK_ROLES = [
+      { id: 'AGENT', name: 'Agent' },
+      { id: 'SALES_MANAGER', name: 'Sales Manager' },
+      { id: 'HR', name: 'HR' },
+      { id: 'FINANCE', name: 'Finance' },
+      { id: 'PROCUREMENT', name: 'Procurement' },
+    ];
+
     try {
-      const [rRes, mRes, sRes, empIdRes] = await Promise.all([
-        api.get('/users/available-roles'),
-        api.get('/users'),
-        api.get('/users/tenant-settings'),
-        api.get('/settings/employee-id-config/next').catch(() => null),
-      ]);
+      // 2. Individual fetches to prevent one failure from blocking others
+      const fetchRoles = api.get('/users/available-roles').then(r => {
+        const d = r.data?.data ?? r.data;
+        if (Array.isArray(d) && d.length > 0) setRoles(d);
+        else if (roles.length === 0) setRoles(FALLBACK_ROLES);
+      }).catch(err => {
+        console.error('Failed to fetch roles:', err);
+        if (roles.length === 0) setRoles(FALLBACK_ROLES);
+      });
 
-      const rolesData    = rRes.data?.data ?? rRes.data;
-      const managersData = mRes.data?.data ?? mRes.data;
-      const settings     = sRes.data?.data ?? sRes.data;
+      const fetchManagers = api.get('/users').then(r => {
+        const d = r.data?.data ?? r.data;
+        setManagers(Array.isArray(d) ? (d as any[]).filter(m => m.id !== id) : []);
+      }).catch(err => console.error('Failed to fetch managers:', err));
 
-      setRoles(Array.isArray(rolesData) ? rolesData : []);
-      setManagers(Array.isArray(managersData) ? (managersData as any[]).filter(m => m.id !== id) : []);
-      setTenantSettings(settings);
+      const fetchSettings = api.get('/users/tenant-settings').then(r => {
+        setTenantSettings(r.data?.data ?? r.data);
+      }).catch(err => console.error('Failed to fetch tenant settings:', err));
 
-      if (empIdRes?.data?.data && !isEdit) {
-        setSuggestedEmpId(empIdRes.data.data.nextId ?? '');
-        setForm(f => ({ ...f, employeeId: empIdRes.data.data.nextId ?? '' }));
-      }
-    } catch (e) { console.error(e); }
+      const fetchEmpId = api.get('/settings/employee-id-config/next').then(res => {
+        if (res?.data?.data && !isEdit) {
+          setSuggestedEmpId(res.data.data.nextId ?? '');
+          setForm(f => ({ ...f, employeeId: res.data.data.nextId ?? '' }));
+        }
+      }).catch(() => null);
+
+      await Promise.allSettled([fetchRoles, fetchManagers, fetchSettings, fetchEmpId]);
+    } catch (e) { 
+      console.error('Metadata fetch error:', e);
+      if (roles.length === 0) setRoles(FALLBACK_ROLES);
+    }
   };
 
   const fetchUser = async () => {

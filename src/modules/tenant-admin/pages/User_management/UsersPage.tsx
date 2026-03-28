@@ -298,19 +298,33 @@ const UsersPage: React.FC = () => {
   };
 
   const fetchData = async () => {
-    try {
-      const [uRes, rRes] = await Promise.all([
-        api.get('/users'), api.get('/users/available-roles'),
-      ]);
-      const userData = uRes.data?.data ?? uRes.data;
-      const rolesData = rRes.data?.data ?? rRes.data;
+    const FALLBACK_ROLES = [
+      { id: 'AGENT', name: 'Agent' },
+      { id: 'SALES_MANAGER', name: 'Sales Manager' },
+      { id: 'HR', name: 'HR' },
+      { id: 'FINANCE', name: 'Finance' },
+      { id: 'PROCUREMENT', name: 'Procurement' },
+    ];
 
-      setUsers(Array.isArray(userData) ? userData : []); 
-      setRoles(Array.isArray(rolesData) ? rolesData : []);
+    try {
+      const fetchUsers = api.get('/users').then(r => {
+        const d = r.data?.data ?? r.data;
+        setUsers(Array.isArray(d) ? d : []);
+      }).catch(err => console.error('Failed to fetch users:', err));
+
+      const fetchRoles = api.get('/users/available-roles').then(r => {
+        const d = r.data?.data ?? r.data;
+        if (Array.isArray(d) && d.length > 0) setRoles(d);
+        else if (roles.length === 0) setRoles(FALLBACK_ROLES);
+      }).catch(err => {
+        console.error('Failed to fetch roles:', err);
+        if (roles.length === 0) setRoles(FALLBACK_ROLES);
+      });
+
+      await Promise.allSettled([fetchUsers, fetchRoles]);
     } catch (e) { 
-      console.error(e); 
-      setUsers([]);
-      setRoles([]);
+      console.error('Data fetch error:', e); 
+      if (roles.length === 0) setRoles(FALLBACK_ROLES);
     }
     finally { setLoading(false); }
   };

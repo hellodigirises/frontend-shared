@@ -1060,7 +1060,7 @@ async function checkSubdomainAvailability(slug) {
       body: JSON.stringify({ subdomain: slug })
     });
     const resData = await res.json();
-    const ok = resData.data.available;
+    const ok = resData?.data?.available ?? false;
     document.getElementById('subdomain-ok').classList.toggle('hidden', !ok);
     document.getElementById('subdomain-err').classList.toggle('hidden', ok);
     document.getElementById('subdomain-preview').textContent = slug;
