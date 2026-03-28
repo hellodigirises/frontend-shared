@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Stack, Button, Chip, IconButton,
   Paper, Divider, Avatar, Tooltip, Badge,
@@ -26,8 +27,14 @@ const NotifRow: React.FC<{
   onPin: () => void;
   compact?: boolean;
 }> = ({ notif, onRead, onDelete, onPin, compact = false }) => {
-  const typeCfg = NOTIF_TYPE_CFG[notif.type];
-  const catCfg = NOTIF_CATEGORY_CFG[notif.category];
+  const navigate = useNavigate();
+  const typeCfg = NOTIF_TYPE_CFG[notif.type] || NOTIF_TYPE_CFG.INFO;
+  const catCfg = (notif.category && NOTIF_CATEGORY_CFG[notif.category as NotifCategory]) || NOTIF_CATEGORY_CFG.SYSTEM;
+
+  const handleRowClick = () => {
+    if (!notif.isRead) onRead();
+    if (notif.actionUrl) navigate(notif.actionUrl);
+  };
 
   return (
     <Box sx={{
@@ -38,7 +45,7 @@ const NotifRow: React.FC<{
       transition: 'all .15s', cursor: 'pointer',
       '&:hover': { bgcolor: '#f8fafc' },
       position: 'relative',
-    }} onClick={!notif.isRead ? onRead : undefined}>
+    }} onClick={handleRowClick}>
       {/* Icon */}
       <Box sx={{
         width: 36, height: 36, borderRadius: 2.5, flexShrink: 0,
@@ -88,6 +95,7 @@ const NotifRow: React.FC<{
           )}
           {notif.actionLabel && (
             <Button size="small" variant="text"
+              onClick={(e) => { e.stopPropagation(); handleRowClick(); }}
               sx={{
                 textTransform: 'none', fontWeight: 800, fontSize: 10, py: 0, px: 0.75, minWidth: 0,
                 color: typeCfg.color, '&:hover': { bgcolor: typeCfg.bg }

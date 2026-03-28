@@ -21,6 +21,7 @@ const VendorPaymentsPage      = lazy(() => import('./pages/VendorPaymentsPage'))
 const BankAccountsPage        = lazy(() => import('./pages/BankAccountsPage'));
 const BankReconciliationPage  = lazy(() => import('./pages/BankReconciliationPage'));
 const ReportsPage             = lazy(() => import('./pages/ReportsPage'));
+const ProfilePage             = lazy(() => import('./pages/ProfilePage'));
 
 const Spin = () => (
   <Box display="flex" alignItems="center" justifyContent="center" minHeight="60vh">
@@ -44,6 +45,7 @@ export default function FinanceRoutes() {
         <Route path="bank-accounts"    element={<BankAccountsPage       />} />
         <Route path="reconciliation"   element={<BankReconciliationPage />} />
         <Route path="reports"          element={<ReportsPage            />} />
+        <Route path="profile"          element={<ProfilePage            />} />
         <Route path="*"                element={<Navigate to="dashboard" replace />} />
       </Routes>
     </Suspense>

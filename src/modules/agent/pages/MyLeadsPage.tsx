@@ -24,12 +24,13 @@
 import React, {
   useEffect, useState, useCallback, useMemo, useRef, FC, ReactNode,
 } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box, TextField, Select, MenuItem, FormControl, InputLabel,
   Typography, Button, Pagination, Chip, Avatar, IconButton,
   Divider, Tooltip, Badge, LinearProgress, CircularProgress,
   Dialog, DialogTitle, DialogContent, DialogActions,
-  InputAdornment, Switch, Grid, Tabs, Tab,
+  InputAdornment, Switch, Grid, Tabs, Tab, Stack, Collapse, Alert,
 } from '@mui/material';
 import {
   SearchOutlined, FilterListOutlined, ViewKanbanOutlined,
@@ -42,17 +43,18 @@ import {
   PersonOutlined, HomeWorkOutlined, CurrencyRupeeOutlined,
   SourceOutlined, MoreVertOutlined, AttachMoneyOutlined,
   ArrowUpwardOutlined, StarOutlined, EventNoteOutlined,
-  TrendingUpOutlined, InfoOutlined, EditOutlined, PersonAddOutlined, MoveUpOutlined,
+  TrendingUpOutlined, InfoOutlined, EditOutlined, PersonAddOutlined, MoveUpOutlined, DeleteOutline,
 } from '@mui/icons-material';
 import { useAppDispatch, useAppSelector, A, DATE, fieldSx, labelSx, selSx } from '../hooks';
-import { fetchLeads, doUpdateLead, doCreateFollowUp, fetchFollowUps, fetchLeadById } from '../store/agentSlice';
-import { Lead, Agent, LeadStatus, LeadPriority, SourceChannel, FollowUp,
+import { fetchLeads, doUpdateLead, doCreateFollowUp, fetchFollowUps, fetchLeadById, doDeleteLead, doUpdateVisit, Lead } from '../store/agentSlice';
+import { Agent, LeadStatus, LeadPriority, SourceChannel, FollowUp,
   PIPELINE_STAGES, STAGE_MAP, PRIORITY_CFG,
   avatarColor, initials as getInitials, fmtBudget, timeAgo as getTimeAgo
 } from '../../tenant-admin/pages/Lead_CRM/crmTypes';
 import api from '../../../api/axios';
 import LeadFormDialog from '../../tenant-admin/pages/Lead_CRM/LeadFormDialog';
 import { LeadTimeline } from '../components/LeadTimeline';
+import ScheduleVisitDialog from './SiteVisits/ScheduleVisitDialog';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Design tokens — warm terracotta + indigo (matches existing agent theme)
@@ -92,16 +94,16 @@ const STATUS_CFG = {
   LOST            : { color:C.red,    bg:`${C.red}12`,    label:'Lost',            icon:'❌' },
 } as Record<string, { color:string; bg:string; label:string; icon:string }>;
 
-const SOURCE_CFG: Record<string, { icon:string; color:string }> = {
-  WALK_IN      : { icon:'🚶', color:C.green   },
-  REFERRAL     : { icon:'🤝', color:C.purple  },
-  WEBSITE      : { icon:'🌐', color:C.blue    },
-  MAGIC_BRICKS : { icon:'🏠', color:C.amber   },
-  HOUSING_COM  : { icon:'🏡', color:C.cyan    },
-  SOCIAL_MEDIA : { icon:'📱', color:C.indigo  },
-  COLD_CALL    : { icon:'📞', color:C.textSub },
-  WHATSAPP     : { icon:'💬', color:C.green   },
-  BROKER       : { icon:'👔', color:C.primary },
+const SOURCE_CFG: Record<string, { icon:string; color:string; label:string }> = {
+  WALK_IN      : { icon:'🚶', color:C.green,   label:'Walk-in'      },
+  REFERRAL     : { icon:'🤝', color:C.purple,  label:'Referral'     },
+  WEBSITE      : { icon:'🌐', color:C.blue,    label:'Website'      },
+  MAGIC_BRICKS : { icon:'🏠', color:C.amber,   label:'MagicBricks'  },
+  HOUSING_COM  : { icon:'🏡', color:C.cyan,    label:'Housing.com'  },
+  SOCIAL_MEDIA : { icon:'📱', color:C.indigo,  label:'Social Media' },
+  COLD_CALL    : { icon:'📞', color:C.textSub, label:'Cold Call'    },
+  WHATSAPP     : { icon:'💬', color:C.green,   label:'WhatsApp'     },
+  BROKER       : { icon:'👔', color:C.primary, label:'Broker'       },
 };
 
 const FOLLOW_TYPES = ['CALL','WHATSAPP','MEETING','SITE_VISIT','EMAIL','VIDEO_CALL'];
@@ -175,7 +177,9 @@ const LeadCardEnhanced: FC<{
   onCall: ()=>void;
   onWhatsApp: ()=>void;
   onScheduleVisit: ()=>void;
-}> = ({ lead, selected, onSelect, onCall, onWhatsApp, onScheduleVisit }) => {
+  onLogFollowUp: ()=>void;
+  onCompleteVisit: (visitId: string) => void;
+}> = ({ lead, selected, onSelect, onCall, onWhatsApp, onScheduleVisit, onLogFollowUp, onCompleteVisit }) => {
   const cfg    = STATUS_CFG[lead.status] ?? STATUS_CFG.NEW;
   const srcCfg = SOURCE_CFG[lead.sourceChannel] ?? { icon:'📋', color:C.textSub };
   const score  = leadScore(lead);
@@ -206,7 +210,7 @@ const LeadCardEnhanced: FC<{
       <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.25}>
         <Box display="flex" alignItems="center" gap={1.25} flex={1} minWidth={0}>
           <Avatar 
-            src={lead.photoUrl}
+            src={lead.photoUrl ? `${lead.photoUrl}${lead.photoUrl.includes('?') ? '&' : '?' }t=${lead.updatedAt ? new Date(lead.updatedAt).getTime() : '0'}` : undefined}
             sx={{ width:34, height:34, bgcolor:avatarBg(lead.customerName), fontSize:12, fontWeight:800, flexShrink:0 }}>
             {initials(lead.customerName)}
           </Avatar>
@@ -242,6 +246,38 @@ const LeadCardEnhanced: FC<{
           <Typography sx={{ fontSize:11.5 }}>{srcCfg.icon}</Typography>
           <Typography sx={{ color:C.textSub, fontSize:11.5 }}>{lead.sourceChannel?.replace(/_/g,' ')}</Typography>
         </Box>
+        {lead.assignedTo?.name && (
+          <Box display="flex" alignItems="center" gap={0.5}>
+            <PersonOutlined sx={{ fontSize:12, color:C.textMut }}/>
+            <Typography sx={{ color:C.textMut, fontSize:11.5 }}>{lead.assignedTo.name}</Typography>
+          </Box>
+        )}
+        {lead.followUps?.[0] && !lead.followUps[0].isCompleted && (
+          <Box onClick={(e)=>{ e.stopPropagation(); onLogFollowUp(); }}
+            sx={{ mt:0.5, px:1, py:0.3, borderRadius:'6px', bgcolor:`${C.amber}12`, border:`1px solid ${C.amber}25`, display:'flex', alignItems:'center', gap:0.5, cursor:'pointer', '&:hover':{bgcolor:`${C.amber}20`} }}>
+            <AccessTimeOutlined sx={{ fontSize:10, color:C.amber }}/>
+            <Typography sx={{ color:C.amber, fontSize:10, fontWeight:700 }}>
+              Next: {new Date(lead.followUps[0].followUpAt).toLocaleDateString('en-IN', { day:'numeric', month:'short' })} @ {new Date(lead.followUps[0].followUpAt).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' })}
+            </Typography>
+          </Box>
+        )}
+        {lead.siteVisits?.[0] && (
+          <Box sx={{ mt:0.5, px:1, py:0.3, borderRadius:'6px', bgcolor:`${C.cyan}12`, border:`1px solid ${C.cyan}25`, display:'flex', alignItems:'center', gap:0.5 }}>
+            <CalendarTodayOutlined sx={{ fontSize:10, color:C.cyan }}/>
+            <Typography sx={{ color:C.cyan, fontSize:10, fontWeight:700 }}>
+              Visit: {new Date(lead.siteVisits[0].visitDate).toLocaleDateString('en-IN', { day:'numeric', month:'short' })} @ {lead.siteVisits[0].visitTime}
+            </Typography>
+            <UpcomingTimer date={lead.siteVisits[0].visitDate} time={lead.siteVisits[0].visitTime} />
+            {lead.siteVisits[0].status !== 'COMPLETED' && (
+              <Tooltip title="Mark Visit Completed">
+                <IconButton size="small" onClick={(e) => { e.stopPropagation(); onCompleteVisit(lead.siteVisits![0].id); }} 
+                  sx={{ p:0.2, color:C.green, ml:0.5, bgcolor:`${C.green}10`, '&:hover':{bgcolor:`${C.green}20`} }}>
+                  <CheckCircleOutlined sx={{ fontSize:12 }} />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
+        )}
       </Box>
 
       {/* Footer */}
@@ -249,7 +285,8 @@ const LeadCardEnhanced: FC<{
         <Box display="flex" alignItems="center" gap={0.75}>
           <ScoreBadge lead={lead}/>
           {followUpCount > 0 && (
-            <Box sx={{ px:1, py:0.2, borderRadius:'20px', bgcolor:`${C.amber}15`, display:'flex', alignItems:'center', gap:0.4 }}>
+            <Box onClick={(e)=>{ e.stopPropagation(); onLogFollowUp(); }} 
+              sx={{ px:1, py:0.2, borderRadius:'20px', bgcolor:`${C.amber}15`, display:'flex', alignItems:'center', gap:0.4, cursor:'pointer', '&:hover':{bgcolor:`${C.amber}25`} }}>
               <AccessTimeOutlined sx={{ fontSize:10, color:C.amber }}/>
               <Typography sx={{ fontSize:10, fontWeight:700, color:C.amber }}>{followUpCount}</Typography>
             </Box>
@@ -259,6 +296,10 @@ const LeadCardEnhanced: FC<{
 
         {/* Quick action buttons */}
         <Box display="flex" gap={0.5} onClick={e=>e.stopPropagation()}>
+          <Tooltip title="Log Activity"><IconButton size="small" onClick={onLogFollowUp}
+            sx={{ color:C.primary, bgcolor:`${C.primary}10`, borderRadius:'8px', width:28, height:28, '&:hover':{bgcolor:`${C.primary}20`} }}>
+            <EventNoteOutlined sx={{fontSize:14}}/>
+          </IconButton></Tooltip>
           <Tooltip title="Call"><IconButton size="small" onClick={onCall}
             sx={{ color:C.green, bgcolor:`${C.green}10`, borderRadius:'8px', width:28, height:28, '&:hover':{bgcolor:`${C.green}20`} }}>
             <PhoneOutlined sx={{fontSize:14}}/>
@@ -280,7 +321,13 @@ const LeadCardEnhanced: FC<{
 // ─────────────────────────────────────────────────────────────────────────────
 // Kanban Column
 // ─────────────────────────────────────────────────────────────────────────────
-const KanbanColumn: FC<{ status: string; leads: Lead[]; onLeadClick: (l:Lead)=>void }> = ({ status, leads, onLeadClick }) => {
+const KanbanColumn: FC<{ 
+  status: string; 
+  leads: Lead[]; 
+  onLeadClick: (l:Lead)=>void; 
+  onLogFollowUp: (l:Lead)=>void;
+  onCompleteVisit: (leadId: string, visitId: string) => void;
+}> = ({ status, leads, onLeadClick, onLogFollowUp, onCompleteVisit }) => {
   const cfg = STATUS_CFG[status] ?? STATUS_CFG.NEW;
   return (
     <Box sx={{ minWidth:220, flex:'0 0 220px', display:'flex', flexDirection:'column', maxHeight:'calc(100vh - 340px)' }}>
@@ -311,9 +358,39 @@ const KanbanColumn: FC<{ status: string; leads: Lead[]; onLeadClick: (l:Lead)=>v
             <Typography sx={{ color:C.text, fontWeight:600, fontSize:12.5, mb:0.4 }} noWrap>{lead.customerName}</Typography>
             <Typography sx={{ color:C.textSub, fontSize:11.5, mb:0.5 }}>{lead.customerPhone}</Typography>
             {lead.budget && <Typography sx={{ color:C.amber, fontSize:11, fontWeight:600 }}>{INR(lead.budget)}</Typography>}
-            <Box display="flex" justifyContent="space-between" mt={0.75}>
-              <ScoreBadge lead={lead}/>
-              <Typography sx={{ color:C.textMut, fontSize:10 }}>{timeAgo(lead.updatedAt)}</Typography>
+            {lead.followUps?.[0] && !lead.followUps[0].isCompleted && (
+               <Typography onClick={(e)=>{ e.stopPropagation(); onLogFollowUp(lead); }}
+                 sx={{ color:C.amber, fontSize:10, fontWeight:700, mt:0.5, cursor:'pointer', '&:hover':{textDecoration:'underline'} }}>
+                 📞 {new Date(lead.followUps[0].followUpAt).toLocaleDateString('en-IN', { day:'numeric', month:'short' })} {new Date(lead.followUps[0].followUpAt).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' })}
+               </Typography>
+            )}
+            {lead.siteVisits?.[0] && (
+               <Box>
+                 <Typography sx={{ color:C.cyan, fontSize:10, fontWeight:700, mt:0.5 }}>
+                   📅 {new Date(lead.siteVisits[0].visitDate).toLocaleDateString('en-IN', { day:'numeric', month:'short' })} {lead.siteVisits[0].visitTime}
+                 </Typography>
+                 <Box display="flex" alignItems="center">
+                    <UpcomingTimer date={lead.siteVisits[0].visitDate} time={lead.siteVisits[0].visitTime} />
+                    {lead.siteVisits[0].status !== 'COMPLETED' && (
+                      <IconButton size="small" onClick={(e) => { e.stopPropagation(); onCompleteVisit(lead.id, lead.siteVisits[0].id); }} 
+                        sx={{ p:0.2, color:C.green, ml:0.5 }}>
+                        <CheckCircleOutlined sx={{ fontSize:11 }} />
+                      </IconButton>
+                    )}
+                 </Box>
+               </Box>
+            )}
+            <Box display="flex" justifyContent="space-between" mt={1}>
+              <Box display="flex" gap={0.4}>
+                <IconButton size="small" onClick={(e)=>{ e.stopPropagation(); onLogFollowUp(lead); }} 
+                  sx={{ p:0.5, borderRadius:'6px', color:C.primary, bgcolor:`${C.primary}08` }}><EventNoteOutlined sx={{fontSize:13}}/></IconButton>
+                <IconButton size="small" onClick={(e)=>{ e.stopPropagation(); window.location.href=`tel:${lead.customerPhone}`; }}
+                  sx={{ p:0.5, borderRadius:'6px', color:C.green, bgcolor:`${C.green}08` }}><PhoneOutlined sx={{fontSize:13}}/></IconButton>
+              </Box>
+              <Box display="flex" alignItems="center" gap={0.75}>
+                <ScoreBadge lead={lead}/>
+                <Typography sx={{ color:C.textMut, fontSize:10 }}>{timeAgo(lead.updatedAt)}</Typography>
+              </Box>
             </Box>
           </Box>
         ))}
@@ -326,96 +403,139 @@ const KanbanColumn: FC<{ status: string; leads: Lead[]; onLeadClick: (l:Lead)=>v
 // Follow-Up Logger Dialog
 // ─────────────────────────────────────────────────────────────────────────────
 const FollowUpDialog: FC<{
-  open: boolean; lead: Lead | null; onClose: ()=>void;
-  onLog: (data: any)=>void;
+  open: boolean; lead: Lead | null; onClose: () => void;
+  onLog: (data: any) => Promise<void>;
 }> = ({ open, lead, onClose, onLog }) => {
-  const [form, setForm] = useState({ activityType:'CALL', notes:'', nextFollowUpDate:'', nextFollowUpType:'CALL', outcome:'' });
-  const set = (k:string,v:string) => setForm(f=>({...f,[k]:v}));
+  const navigate = useNavigate();
+  const [form, setForm] = useState({ activityType: 'CALL', notes: '', nextFollowUpDate: '', nextFollowUpType: 'CALL', outcome: '' });
+  const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string|null>(null);
+
+  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  useEffect(() => {
+    if (open) { 
+      setSuccess(false); setError(null); setSaving(false);
+      setForm({ activityType: 'CALL', notes: '', nextFollowUpDate: '', nextFollowUpType: 'CALL', outcome: '' });
+    }
+  }, [open]);
 
   if (!lead) return null;
 
-  const TYPE_ICONS: Record<string,string> = { CALL:'📞', WHATSAPP:'💬', MEETING:'🤝', SITE_VISIT:'📍', EMAIL:'📧', VIDEO_CALL:'📹' };
-  const Fs = { '& .MuiOutlinedInput-root':{ bgcolor:C.surfaceHi, color:C.text, borderRadius:'10px', fontSize:13, '& fieldset':{borderColor:C.border}, '&:hover fieldset':{borderColor:C.primary}, '&.Mui-focused fieldset':{borderColor:C.primary} } };
-  const Lb = { sx:{ color:C.textSub, fontSize:13 } };
+  const TYPE_ICONS: Record<string, string> = { CALL: '📞', WHATSAPP: '💬', MEETING: '🤝', SITE_VISIT: '📍', EMAIL: '📧', VIDEO_CALL: '📹' };
+  
+  const S = {
+    label: { fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(255,255,255,0.5)', display: 'block', mb: 1 },
+    card: (sel: boolean, col: string) => ({
+      p: 1.25, borderRadius: 2, textAlign: 'center', cursor: 'pointer', border: '1px solid',
+      borderColor: sel ? col : 'rgba(255,255,255,0.1)',
+      bgcolor: sel ? col + '15' : 'rgba(255,255,255,0.05)',
+      transition: 'all .12s', '&:hover': { borderColor: col, bgcolor: col + '10' }
+    }),
+    input: {
+      '& .MuiOutlinedInput-root': { bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 2, color: '#fff', fontSize: 13, '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' }, '&:hover fieldset': { borderColor: C.primary } }
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true); setError(null);
+    try {
+      await onLog(form);
+      setSuccess(true);
+      setTimeout(() => {
+        onClose();
+        navigate('/agent/followups');
+      }, 1500);
+    } catch (e: any) {
+      setError(e.message || 'Failed to log activity');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth
-      PaperProps={{ sx:{ bgcolor:C.surface, border:`1px solid ${C.border}`, borderRadius:'18px' } }}>
-      <DialogTitle sx={{ color:C.text, fontWeight:700, fontSize:15, pb:1, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <Box display="flex" alignItems="center" gap={1}>
-          <Box sx={{ width:30, height:30, borderRadius:'9px', bgcolor:`${C.primary}15`, color:C.primary, display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <EventNoteOutlined sx={{fontSize:16}}/>
+      PaperProps={{ sx: { bgcolor: '#1A0F0A', borderRadius: 4, backgroundImage: 'none', border: '1px solid rgba(255,220,180,0.1)' } }}>
+      <DialogTitle sx={{ color: '#fff', fontWeight: 900, fontFamily: '"Playfair Display", serif', pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box display="flex" alignItems="center" gap={1.5}>
+          <Box sx={{ width: 32, height: 32, borderRadius: '10px', bgcolor: `${C.primary}20`, color: C.primary, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <EventNoteOutlined sx={{ fontSize: 18 }} />
           </Box>
-          Log Follow-up · <Typography component="span" sx={{ color:C.primary, fontWeight:700, fontSize:15 }}>{lead.customerName}</Typography>
+          Log Activity · <Typography component="span" sx={{ color: C.primary, fontWeight: 800 }}>{lead.customerName}</Typography>
         </Box>
-        <IconButton size="small" onClick={onClose} sx={{ color:C.textSub }}><CloseOutlined sx={{fontSize:17}}/></IconButton>
+        <IconButton size="small" onClick={onClose} sx={{ color: 'rgba(255,255,255,0.4)' }}><CloseOutlined /></IconButton>
       </DialogTitle>
-      <Divider sx={{ borderColor:C.border }}/>
-      <DialogContent sx={{ pt:2.5 }}>
-        <Box display="flex" flexDirection="column" gap={2.5}>
-          {/* Activity type chips */}
+
+      <DialogContent sx={{ py: 2 }}>
+        <Stack spacing={3}>
+          <Collapse in={!!error}>
+            <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert>
+          </Collapse>
+          <Collapse in={success}>
+            <Alert severity="success" sx={{ borderRadius: 2, bgcolor: 'rgba(34,197,94,0.1)', color: '#4ADE80' }}>
+              Activity logged successfully! Redirecting...
+            </Alert>
+          </Collapse>
+
           <Box>
-            <Typography sx={{ color:C.textSub, fontSize:12, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5, mb:1 }}>Activity Type</Typography>
-            <Box display="flex" flexWrap="wrap" gap={0.75}>
-              {FOLLOW_TYPES.map(t=>(
-                <Box key={t} onClick={()=>set('activityType',t)} sx={{
-                  px:1.5, py:0.6, borderRadius:'10px', cursor:'pointer',
-                  border:`1.5px solid ${form.activityType===t?C.primary:C.border}`,
-                  bgcolor:form.activityType===t?`${C.primary}12`:C.surfaceHi,
-                  display:'flex', alignItems:'center', gap:0.6, transition:'all .12s',
-                }}>
-                  <Typography sx={{fontSize:13}}>{TYPE_ICONS[t]}</Typography>
-                  <Typography sx={{ fontSize:12, fontWeight:600, color:form.activityType===t?C.primary:C.textSub }}>{t.replace(/_/g,' ')}</Typography>
-                </Box>
+            <Typography sx={S.label}>Activity Type</Typography>
+            <Grid container spacing={1}>
+              {FOLLOW_TYPES.map(t => (
+                <Grid item xs={4} sm={2} key={t}>
+                  <Box onClick={() => set('activityType', t)} sx={S.card(form.activityType === t, C.primary)}>
+                    <Typography sx={{ fontSize: 18, mb: 0.25 }}>{TYPE_ICONS[t]}</Typography>
+                    <Typography sx={{ fontSize: 9, fontWeight: 800, color: form.activityType === t ? C.primary : 'rgba(255,255,255,0.4)' }}>
+                      {t.replace(/_/g, ' ')}
+                    </Typography>
+                  </Box>
+                </Grid>
               ))}
-            </Box>
+            </Grid>
           </Box>
 
-          <TextField fullWidth size="small" label="Notes" multiline rows={3} value={form.notes}
-            onChange={e=>set('notes',e.target.value)} sx={Fs} InputLabelProps={Lb}
-            placeholder="What was discussed? What's the customer's intent?"/>
+          <Box>
+            <Typography sx={S.label}>Discussion Notes</Typography>
+            <TextField fullWidth multiline rows={3} placeholder="Key points from the conversation..."
+              value={form.notes} onChange={e => set('notes', e.target.value)} sx={S.input} />
+          </Box>
 
           <Grid container spacing={2}>
-            <Grid item xs={7}>
-              <TextField fullWidth size="small" label="Next Follow-up Date" type="datetime-local" value={form.nextFollowUpDate}
-                onChange={e=>set('nextFollowUpDate',e.target.value)} sx={Fs} InputLabelProps={{...Lb, shrink:true}}/>
+            <Grid item xs={12} sm={7}>
+              <Typography sx={S.label}>Next Follow-up Date</Typography>
+              <TextField fullWidth type="datetime-local" size="small" value={form.nextFollowUpDate}
+                onChange={e => set('nextFollowUpDate', e.target.value)} sx={S.input} InputLabelProps={{ shrink: true }} />
             </Grid>
-            <Grid item xs={5}>
-              <FormControl fullWidth size="small">
-                <InputLabel sx={{ color:C.textSub, fontSize:13 }}>Via</InputLabel>
-                <Select value={form.nextFollowUpType} label="Via" onChange={e=>set('nextFollowUpType',e.target.value)}
-                  sx={{ bgcolor:C.surfaceHi, color:C.text, borderRadius:'10px', fontSize:13, '& fieldset':{borderColor:C.border}, '&:hover .MuiOutlinedInput-notchedOutline':{borderColor:C.primary} }}>
-                  {FOLLOW_TYPES.map(t=><MenuItem key={t} value={t} sx={{fontSize:13}}>{TYPE_ICONS[t]} {t.replace(/_/g,' ')}</MenuItem>)}
+            <Grid item xs={12} sm={5}>
+              <Typography sx={S.label}>Next Via</Typography>
+              <FormControl fullWidth size="small" sx={S.input}>
+                <Select value={form.nextFollowUpType} onChange={e => set('nextFollowUpType', e.target.value as string)}>
+                  {FOLLOW_TYPES.map(t => <MenuItem key={t} value={t} sx={{ fontSize: 13 }}>{TYPE_ICONS[t]} {t}</MenuItem>)}
                 </Select>
               </FormControl>
             </Grid>
           </Grid>
 
           <Box>
-            <Typography sx={{ color:C.textSub, fontSize:12, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5, mb:1 }}>Call Outcome</Typography>
-            <Box display="flex" flexWrap="wrap" gap={0.6}>
-              {OUTCOMES.map(o=>(
-                <Box key={o} onClick={()=>set('outcome',o)} sx={{
-                  px:1.25, py:0.5, borderRadius:'8px', cursor:'pointer',
-                  border:`1px solid ${form.outcome===o?C.green:C.border}`,
-                  bgcolor:form.outcome===o?`${C.green}12`:C.surfaceHi,
-                }}>
-                  <Typography sx={{ fontSize:11.5, fontWeight:600, color:form.outcome===o?C.green:C.textSub }}>
-                    {o.replace(/_/g,' ')}
+            <Typography sx={S.label}>Call Outcome</Typography>
+            <Box display="flex" flexWrap="wrap" gap={0.75}>
+              {OUTCOMES.map(o => (
+                <Box key={o} onClick={() => set('outcome', o)} sx={S.card(form.outcome === o, C.green)}>
+                  <Typography sx={{ fontSize: 11, fontWeight: 700, color: form.outcome === o ? C.green : 'rgba(255,255,255,0.4)' }}>
+                    {o.replace(/_/g, ' ')}
                   </Typography>
                 </Box>
               ))}
             </Box>
           </Box>
-        </Box>
+        </Stack>
       </DialogContent>
-      <Divider sx={{ borderColor:C.border }}/>
-      <DialogActions sx={{ px:3, py:2, gap:1 }}>
-        <Button onClick={onClose} sx={{ color:C.textSub, textTransform:'none', fontSize:13 }}>Cancel</Button>
-        <Button variant="contained" disableElevation onClick={()=>{ onLog(form); onClose(); }}
-          startIcon={<SendOutlined sx={{fontSize:15}}/>}
-          sx={{ bgcolor:C.primary, textTransform:'none', fontWeight:700, borderRadius:'10px', fontSize:13, '&:hover':{bgcolor:'#EA580C'} }}>
-          Log Activity
+
+      <DialogActions sx={{ p: 3, gap: 1 }}>
+        <Button onClick={onClose} sx={{ color: 'rgba(255,255,255,0.5)', textTransform: 'none' }}>Cancel</Button>
+        <Button variant="contained" onClick={handleSave} disabled={saving || success}
+          sx={{ bgcolor: C.primary, borderRadius: 2, fontWeight: 700, textTransform: 'none', px: 4, '&:hover': { bgcolor: '#EA580C' } }}>
+          {saving ? <CircularProgress size={20} color="inherit" /> : 'Log Activity'}
         </Button>
       </DialogActions>
     </Dialog>
@@ -430,9 +550,11 @@ const LeadDetailPanel: FC<{
   onClose: ()=>void;
   onStatusChange: (status:string)=>void;
   onLogFollowUp: ()=>void;
+  onScheduleVisit: ()=>void;
   onNote: (note:string)=>void;
   onEdit: ()=>void;
-}> = ({ lead, onClose, onStatusChange, onLogFollowUp, onNote, onEdit }) => {
+  onDelete: ()=>void;
+}> = ({ lead, onClose, onStatusChange, onLogFollowUp, onScheduleVisit, onNote, onEdit, onDelete }) => {
   const [tab,     setTab]     = useState(0);
   const [note,    setNote]    = useState('');
   const [editSts, setEditSts] = useState(false);
@@ -441,6 +563,7 @@ const LeadDetailPanel: FC<{
 
   const infoRows = [
     { icon:<PhoneOutlined sx={{fontSize:14}}/>,         label:'Phone',    val:lead.customerPhone   },
+    { icon:<PersonOutlined sx={{fontSize:14}}/>,         label:'Agent',    val:lead.assignedTo?.name||'—' },
     { icon:<PersonOutlined sx={{fontSize:14}}/>,         label:'Email',    val:lead.customerEmail||'—' },
     { icon:<HomeWorkOutlined sx={{fontSize:14}}/>,       label:'Project',  val:lead.project?.name||'—' },
     { icon:<CurrencyRupeeOutlined sx={{fontSize:14}}/>,  label:'Budget',   val:INR(lead.budget) },
@@ -457,7 +580,7 @@ const LeadDetailPanel: FC<{
         <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.75}>
           <Box display="flex" alignItems="center" gap={1.5}>
             <Avatar 
-              src={lead.photoUrl}
+              src={lead.photoUrl ? `${lead.photoUrl}${lead.photoUrl.includes('?') ? '&' : '?' }t=${lead.updatedAt ? new Date(lead.updatedAt).getTime() : '0'}` : undefined}
               sx={{ width:44, height:44, bgcolor:avatarBg(lead.customerName), fontSize:16, fontWeight:800 }}>
               {initials(lead.customerName)}
             </Avatar>
@@ -467,6 +590,16 @@ const LeadDetailPanel: FC<{
             </Box>
           </Box>
           <Box display="flex" gap={0.5}>
+            <Tooltip title="Schedule Visit">
+                <IconButton size="small" onClick={onScheduleVisit} sx={{ color:C.cyan, '&:hover':{color:C.cyan, bgcolor:`${C.cyan}15`} }}>
+                    <CalendarTodayOutlined sx={{fontSize:17}}/>
+                </IconButton>
+            </Tooltip>
+            <Tooltip title="Log Follow-up">
+                <IconButton size="small" onClick={onLogFollowUp} sx={{ color:C.primary, '&:hover':{color:C.primary, bgcolor:`${C.primary}10`} }}>
+                    <EventNoteOutlined sx={{fontSize:17}}/>
+                </IconButton>
+            </Tooltip>
             <Tooltip title="Edit Lead">
                 <IconButton size="small" onClick={onEdit} sx={{ color:C.textSub, '&:hover':{color:C.primary} }}>
                     <EditOutlined sx={{fontSize:17}}/>
@@ -475,6 +608,11 @@ const LeadDetailPanel: FC<{
             <Tooltip title="Transfer to Agent">
                 <IconButton size="small" onClick={onEdit} sx={{ color:C.textSub, '&:hover':{color:C.primary} }}>
                     <PersonAddOutlined sx={{fontSize:17}}/>
+                </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete Lead">
+                <IconButton size="small" onClick={onDelete} sx={{ color:C.red, '&:hover':{color:C.red, bgcolor:`${C.red}15`} }}>
+                    <DeleteOutline sx={{fontSize:17}}/>
                 </IconButton>
             </Tooltip>
             <IconButton size="small" onClick={onClose} sx={{ color:C.textSub, '&:hover':{color:C.text} }}>
@@ -595,6 +733,38 @@ const LeadDetailPanel: FC<{
   );
 };
 
+const UpcomingTimer: FC<{ date: string; time: string; onComplete?: () => void }> = ({ date, time, onComplete }) => {
+  const [timeLeft, setTimeLeft] = useState<string>('');
+
+  useEffect(() => {
+    if (!date || !time) return;
+    const target = new Date(`${date.split('T')[0]}T${time}`);
+    if (isNaN(target.getTime())) return;
+
+    const update = () => {
+      const diff = target.getTime() - Date.now();
+      if (diff <= 0) {
+        setTimeLeft('Completed');
+        onComplete?.();
+        return;
+      }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTimeLeft(`${h}h ${m}m ${s}s`);
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [date, time, onComplete]);
+
+  return (
+    <Typography component="span" sx={{ fontSize: 10, fontWeight: 800, color: timeLeft === 'Completed' ? C.green : C.amber, ml: 0.5 }}>
+      {timeLeft === 'Completed' ? '✓ Completed' : `⏳ ${timeLeft}`}
+    </Typography>
+  );
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Page
 // ─────────────────────────────────────────────────────────────────────────────
@@ -606,6 +776,7 @@ type SortMode = 'recent' | 'name' | 'budget_high' | 'hot_first';
 
 export default function MyLeadsPage() {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { leads, loading } = useAppSelector(s => s.agent);
 
   const [search,   setSearch]   = useState('');
@@ -621,19 +792,43 @@ export default function MyLeadsPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [leadToEdit, setLeadToEdit] = useState<any>(null);
   const [followUpOpen, setFollowUpOpen] = useState(false);
+  const [visitOpen, setVisitOpen] = useState(false);
+  const [visitPrefill, setVisitPrefill] = useState<any>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [leadToDelete, setLeadToDelete] = useState<string|null>(null);
   const busy = !!loading.leads;
 
   const load = useCallback(()=>{
     dispatch(fetchLeads({ search:search||undefined, status:status||undefined, skip:(page-1)*PAGE_SIZE, take:PAGE_SIZE }));
   },[dispatch,search,status,page]);
 
+  const allLeads = leads.data;
+
   useEffect(()=>{
     load();
     api.get('/agent/peers').then((r: any) => setPeers(r.data?.data || [])).catch(console.error);
-  },[load, dispatch]);
+  },[load]);
+
+  useEffect(() => {
+    // Auto-mark completed visits (visual/logic check)
+    const interval = setInterval(() => {
+      leads.data.forEach(lead => {
+        if (lead.siteVisits?.[0] && lead.status === 'VISIT_SCHEDULED') {
+          const v = lead.siteVisits[0];
+          if (!v.visitDate || !v.visitTime) return;
+          const target = new Date(`${v.visitDate.split('T')[0]}T${v.visitTime}`);
+          if (!isNaN(target.getTime()) && target.getTime() < Date.now() && v.status !== 'COMPLETED') {
+             dispatch(doUpdateVisit({ id: v.id, status: 'COMPLETED' })).then(() => {
+               dispatch(fetchLeadById(lead.id));
+             });
+          }
+        }
+      });
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [allLeads, dispatch]);
 
   // Stats
-  const allLeads = leads.data;
   const selected = useMemo(() => allLeads.find(l => l.id === selectedLeadId) || null, [allLeads, selectedLeadId]);
   const setSelected = useCallback((val: any) => {
     if (typeof val === 'function') {
@@ -678,13 +873,45 @@ export default function MyLeadsPage() {
   },[sorted]);
 
   const handleStatusChange = (leadId:string, newStatus:string) => {
-    dispatch(doUpdateLead({ id:leadId, status:newStatus }));
+    dispatch(doUpdateLead({ id:leadId, status:newStatus })).then((res:any) => {
+       if (newStatus === 'FOLLOW_UP' && res.payload) {
+         setFuLead(res.payload);
+       }
+    });
+
+    if (newStatus === 'VISIT_SCHEDULED') {
+      const l = allLeads.find(x => x.id === leadId);
+      if (l) {
+        setVisitPrefill(l);
+        setVisitOpen(true);
+      }
+    }
   };
 
   const handleLogFollowUp = (data:any) => {
-    if (!fuLead) return;
-    dispatch(doCreateFollowUp({ leadId:fuLead.id, ...data })).then(() => {
+    if (!fuLead) return Promise.resolve();
+    return dispatch(doCreateFollowUp({ leadId:fuLead.id, ...data })).then(() => {
         dispatch(fetchLeadById(fuLead.id));
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    setLeadToDelete(id);
+    setDeleteOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (leadToDelete) {
+      await dispatch(doDeleteLead(leadToDelete));
+      setDeleteOpen(false);
+      setLeadToDelete(null);
+      if (selectedLeadId === leadToDelete) setSelectedLeadId(null);
+    }
+  };
+
+  const handleCompleteVisit = (leadId: string, visitId: string) => {
+    dispatch(doUpdateVisit({ id: visitId, status: 'COMPLETED' })).then(() => {
+      dispatch(fetchLeadById(leadId));
     });
   };
 
@@ -772,8 +999,10 @@ export default function MyLeadsPage() {
           <FormControl size="small" sx={{ minWidth:120 }}>
             <InputLabel sx={{ color:C.textSub, fontSize:13 }}>Status</InputLabel>
             <Select value={status} label="Status" onChange={e=>{setStatus(e.target.value);setPage(1);}} sx={Ss}>
-              <MenuItem value="" sx={{fontSize:13}}>All</MenuItem>
-              {STATUSES.map(s=><MenuItem key={s} value={s} sx={{fontSize:13}}>{STATUS_CFG[s].icon} {s}</MenuItem>)}
+              <MenuItem value="" sx={{fontSize:13}}>All Status</MenuItem>
+              {STATUSES.map(s=>(
+                <MenuItem key={s} value={s} sx={{fontSize:13}}>{STATUS_CFG[s].icon} {STATUS_CFG[s].label}</MenuItem>
+              ))}
             </Select>
           </FormControl>
 
@@ -781,7 +1010,9 @@ export default function MyLeadsPage() {
             <InputLabel sx={{ color:C.textSub, fontSize:13 }}>Source</InputLabel>
             <Select value={source} label="Source" onChange={e=>setSource(e.target.value)} sx={Ss}>
               <MenuItem value="" sx={{fontSize:13}}>All Sources</MenuItem>
-              {Object.entries(SOURCE_CFG).map(([k,v])=><MenuItem key={k} value={k} sx={{fontSize:13}}>{v.icon} {k.replace(/_/g,' ')}</MenuItem>)}
+              {Object.entries(SOURCE_CFG).map(([k,v])=>(
+                <MenuItem key={k} value={k} sx={{fontSize:13}}>{(v as any).icon} {(v as any).label}</MenuItem>
+              ))}
             </Select>
           </FormControl>
 
@@ -831,12 +1062,14 @@ export default function MyLeadsPage() {
             ) : view === 'cards' ? (
               <>
                 {sorted.map(lead=>(
-                  <LeadCardEnhanced key={lead.id} lead={lead}
+                  <LeadCardEnhanced key={lead.id} lead={lead as any}
                     selected={selected?.id===lead.id}
                     onSelect={()=>setSelected(s=>s?.id===lead.id?null:lead)}
                     onCall={()=>window.location.href=`tel:${lead.customerPhone}`}
                     onWhatsApp={()=>window.open(`https://wa.me/${lead.customerPhone?.replace(/\D/g,'')}`,`_blank`)}
-                    onScheduleVisit={()=>{ setSelected(lead); setFuLead(lead); }}
+                    onScheduleVisit={()=>{ setVisitPrefill(lead); setVisitOpen(true); }}
+                    onLogFollowUp={()=>setFuLead(lead)}
+                    onCompleteVisit={(vid) => handleCompleteVisit(lead.id, vid)}
                   />
                 ))}
                 {Math.ceil(leads.total/PAGE_SIZE)>1 && (
@@ -881,7 +1114,11 @@ export default function MyLeadsPage() {
         {view === 'kanban' && (
           <Box sx={{ flex:1, overflowX:'auto', display:'flex', gap:2, pb:1, alignItems:'flex-start' }}>
             {STATUSES.map(s=>(
-              <KanbanColumn key={s} status={s} leads={kanban[s]??[]} onLeadClick={l=>{ setSelected(l); setView('cards'); }}/>
+              <KanbanColumn key={s} status={s} leads={kanban[s]??[]} 
+                onLeadClick={l=>{ setSelected(l); setView('cards'); }} 
+                onLogFollowUp={l=>setFuLead(l)}
+                onCompleteVisit={handleCompleteVisit}
+              />
             ))}
           </Box>
         )}
@@ -894,8 +1131,10 @@ export default function MyLeadsPage() {
               onClose={()=>setSelected(null)}
               onStatusChange={(s)=>handleStatusChange(selected.id,s)}
               onLogFollowUp={()=>setFuLead(selected)}
+              onScheduleVisit={()=>{ setVisitPrefill(selected); setVisitOpen(true); }}
               onNote={handleNote}
               onEdit={() => { setLeadToEdit(selected); setEditOpen(true); }}
+              onDelete={() => handleDelete(selected.id)}
             />
           </Box>
         )}
@@ -904,15 +1143,44 @@ export default function MyLeadsPage() {
       {/* ── Follow-up dialog ── */}
       <FollowUpDialog open={!!fuLead} lead={fuLead} onClose={()=>setFuLead(null)} onLog={handleLogFollowUp}/>
 
-          <LeadFormDialog
-            open={addOpen || editOpen}
-            onClose={() => { setAddOpen(false); setEditOpen(false); setLeadToEdit(null); }}
-            onSave={() => { setAddOpen(false); setEditOpen(false); setLeadToEdit(null); load(); }}
-            initial={leadToEdit || undefined}
-            isAgent={true}
-            agents={peers}
-            apiOverride={api}
-          />
+      <LeadFormDialog
+        open={addOpen || editOpen}
+        onClose={() => { setAddOpen(false); setEditOpen(false); setLeadToEdit(null); }}
+        onSave={(saved?: any) => { 
+          setAddOpen(false); setEditOpen(false); setLeadToEdit(null); 
+          load(); 
+          if (saved?.status === 'FOLLOW_UP') setFuLead(saved);
+        }}
+        initial={leadToEdit || undefined}
+        isAgent={true}
+        agents={peers}
+        apiOverride={api}
+        onVisitSchedule={(l) => { setVisitPrefill(l); setVisitOpen(true); }}
+      />
+
+      <ScheduleVisitDialog
+        open={visitOpen}
+        onClose={() => { setVisitOpen(false); setVisitPrefill(null); }}
+        prefillLead={visitPrefill}
+        onSave={load}
+      />
+
+      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)}
+        PaperProps={{ sx: { bgcolor: C.surface, border: `1px solid ${C.border}`, borderRadius: 3, p: 1 } }}>
+        <DialogTitle sx={{ color: C.text, fontWeight: 700 }}>Delete Lead</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ color: C.textSub, fontSize: 14 }}>
+            Are you sure you want to delete this lead? This persistent action will remove it from the database and cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ pb: 2, px: 3 }}>
+          <Button onClick={() => setDeleteOpen(false)} sx={{ color: C.textSub, textTransform: 'none' }}>Cancel</Button>
+          <Button onClick={confirmDelete} variant="contained" color="error" 
+            sx={{ bgcolor: C.red, textTransform: 'none', px: 3, borderRadius: 2, fontWeight: 700 }}>
+            Delete Permanently
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

@@ -3,14 +3,14 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import {
   Box, Drawer, List, ListItemButton, ListItemIcon, ListItemText,
-  Typography, Avatar, Divider, Tooltip, IconButton,
+  Typography, Avatar, Divider, Tooltip, IconButton, Menu, MenuItem,
 } from '@mui/material';
 import {
   Dashboard, Receipt, EventNote, Description, ConfirmationNumber,
   Handshake, ShoppingCart, Payments, AccountBalance,
-  CompareArrows, Assessment, MenuOpen, Menu as MenuIcon, Logout,
+  CompareArrows, Assessment, MenuOpen, Menu as MenuIcon, Logout, Person, Settings,
 } from '@mui/icons-material';
-import { F } from '../hooks';
+import { F, useAppSelector } from '../hooks';
 
 const W=252, WC=62;
 const NAV = [
@@ -29,10 +29,22 @@ const NAV = [
 
 export default function FinanceLayout({ children }: { children?: React.ReactNode }) {
   const [col, setC] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
   const nav = useNavigate();
   const loc = useLocation();
+  const profile = useAppSelector(s => s.finance.profile);
   const dw  = col ? WC : W;
   const on  = (p: string) => loc.pathname.startsWith(p);
+
+  const handleMenuOpen = (e: React.MouseEvent<HTMLElement>) => setAnchorEl(e.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
+
+  const handleLogout = () => {
+    handleMenuClose();
+    localStorage.removeItem('token');
+    nav('/login');
+  };
 
   return (
     <Box sx={{ display:'flex', minHeight:'100vh', bgcolor:F.bg }}>
@@ -81,23 +93,72 @@ export default function FinanceLayout({ children }: { children?: React.ReactNode
 
         <Divider sx={{ borderColor:F.border }}/>
         <Box sx={{ display:'flex', alignItems:'center', gap:1.25, px:col?1:2, py:1.5, flexShrink:0 }}>
-          <Avatar sx={{ width:28, height:28, bgcolor:F.primary, fontSize:11, fontWeight:700, flexShrink:0 }}>FN</Avatar>
+          <Avatar 
+            src={profile?.avatarUrl}
+            onClick={handleMenuOpen}
+            sx={{ width:28, height:28, bgcolor:F.primary, fontSize:11, fontWeight:700, flexShrink:0, cursor:'pointer' }}
+          >
+            {(profile?.name ?? 'FN').charAt(0)}
+          </Avatar>
           {!col && <Box flex={1} minWidth={0}>
-            <Typography sx={{ color:F.text, fontSize:12, fontWeight:600 }} noWrap>Finance Team</Typography>
-            <Typography sx={{ color:F.textSub, fontSize:10.5 }} noWrap>finance@realesso.io</Typography>
+            <Typography sx={{ color:F.text, fontSize:12, fontWeight:600 }} noWrap>{profile?.name ?? 'Finance Team'}</Typography>
+            <Typography sx={{ color:F.textSub, fontSize:10.5 }} noWrap>{profile?.email ?? 'finance@realesso.io'}</Typography>
           </Box>}
-          {!col && <IconButton size="small" sx={{ color:F.muted, '&:hover':{color:F.red}, flexShrink:0 }}><Logout sx={{fontSize:14}}/></IconButton>}
+          {!col && <IconButton size="small" onClick={handleLogout} sx={{ color:F.muted, '&:hover':{color:F.red}, flexShrink:0 }}><Logout sx={{fontSize:14}}/></IconButton>}
         </Box>
       </Drawer>
 
       <Box component="main" sx={{ flex:1, minWidth:0, display:'flex', flexDirection:'column' }}>
         <Box sx={{ display:'flex', alignItems:'center', justifyContent:'flex-end', gap:1.5, px:3, height:60, flexShrink:0, borderBottom:`1px solid ${F.border}`, bgcolor:F.surface }}>
-          <Avatar sx={{ width:28, height:28, bgcolor:F.primary, fontSize:10, fontWeight:700 }}>FN</Avatar>
+          <Avatar 
+            src={profile?.avatarUrl}
+            onClick={handleMenuOpen}
+            sx={{ width:28, height:28, bgcolor:F.primary, fontSize:10, fontWeight:700, cursor:'pointer' }}
+          >
+            {(profile?.name ?? 'FN').charAt(0)}
+          </Avatar>
         </Box>
         <Box sx={{ flex:1, overflowY:'auto', p:{xs:2,md:3} }}>
           {children || <Outlet />}
         </Box>
       </Box>
+
+      {/* Profile Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleMenuClose}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        PaperProps={{
+          sx: {
+            bgcolor: F.surface,
+            border: `1px solid ${F.border}`,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+            mt: 1,
+            minWidth: 160,
+            '& .MuiMenuItem-root': {
+              fontSize: 13,
+              color: F.textSub,
+              gap: 1.5,
+              py: 1,
+              '&:hover': { bgcolor: `${F.primary}10`, color: F.text },
+              '& .MuiSvgIcon-root': { fontSize: 18, color: F.muted }
+            }
+          }
+        }}
+      >
+        <MenuItem onClick={() => { handleMenuClose(); nav('/finance/profile'); }}>
+          <Person /> My Profile
+        </MenuItem>
+        <MenuItem onClick={() => { handleMenuClose(); nav('/finance/settings'); }}>
+          <Settings /> Settings
+        </MenuItem>
+        <Divider sx={{ borderColor: F.border }} />
+        <MenuItem onClick={handleLogout} sx={{ color: `${F.red} !important` }}>
+          <Logout sx={{ color: `${F.red} !important` }} /> Logout
+        </MenuItem>
+      </Menu>
     </Box>
   );
 }

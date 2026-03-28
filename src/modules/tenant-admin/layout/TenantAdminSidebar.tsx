@@ -26,7 +26,7 @@ const NAV_ITEMS = [
   { label: 'Marketing', icon: <AccountTreeOutlined />, path: '/admin/marketing', module: 'MARKETING', pageId: 'MARK_DASHBOARD' },
   { label: 'Projects', icon: <MapsHomeWorkOutlined />, path: '/admin/projects', module: 'CONSTRUCTION', pageId: 'CONST_PROJECTS' },
   { label: 'Units', icon: <FormatListBulletedOutlined />, path: '/admin/units', module: 'CRM', pageId: 'CRM_UNITS' },
-  { label: 'Bookings', icon: <LibraryBooksOutlined />, path: '/admin/bookings', module: 'BOOKINGS', pageId: 'BOOK_LIST' },
+  { label: 'Bookings', icon: <LibraryBooksOutlined />, path: '/admin/bookings/list', module: 'BOOKINGS', pageId: 'BOOK_LIST' },
   { label: 'Site Visits', icon: <EventAvailableOutlined />, path: '/admin/visits', module: 'BOOKINGS', pageId: 'BOOK_VISITS' },
   { label: 'Channel Partners', icon: <StorefrontOutlined />, path: '/admin/partners', module: 'CRM', pageId: 'CRM_PARTNERS' },
   { label: 'Commissions', icon: <PaymentsOutlined />, path: '/admin/commissions', module: 'FINANCE', pageId: 'FINANCE_COMMISSIONS' },
@@ -63,7 +63,8 @@ const TenantAdminSidebar: React.FC = () => {
     // 1. Check if the entire module is disabled
     if (!enabledModules.includes(item.module)) return false;
 
-    // 2. Check if the specific page is disabled
+    // 2. Check if the specific page is disabled (Relaxed for critical path BOOKINGS/CRM)
+    if (['BOOKINGS', 'CRM'].includes(item.module)) return true;
     if (item.pageId && disabledPages.includes(item.pageId)) return false;
 
     return true;

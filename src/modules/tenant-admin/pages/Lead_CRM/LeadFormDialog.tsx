@@ -37,9 +37,10 @@ interface Props {
   initial: any;
   agents?: Agent[];
   apiOverride?: any;
-  onSave: () => void;
+  onSave: (lead?: any) => void;
   onView?: (id: string) => void;
   isAgent?: boolean;
+  onVisitSchedule?: (lead: any) => void;
 }
 
 const C = {
@@ -172,7 +173,7 @@ const LeadFormDialog: React.FC<Props> = ({ open, onClose, onSave, initial, onVie
           await activeApi.post('/leads/assign', { leadId: r.data.id ?? r.data.data?.id, agentId: form.assignedAgentId });
         }
       }
-      onSave();
+      onSave(isEdit ? { ...form, id: initial!.id } : (r.data?.data ?? r.data));
       setSuccess(true);
       setTimeout(() => { setSuccess(false); onClose(); }, 1500);
     } catch (e: any) {
@@ -541,7 +542,14 @@ const LeadFormDialog: React.FC<Props> = ({ open, onClose, onSave, initial, onVie
                 <FormControl fullWidth size="small" error={!!errors.status}>
                   <InputLabel>Pipeline Stage</InputLabel>
                   <Select value={form.status} label="Pipeline Stage"
-                    onChange={e => set('status', e.target.value)}>
+                    onChange={(e) => {
+                      const val = e.target.value as string;
+                      set('status', val);
+                      if (val === 'SITE_VISIT' || val === 'VISIT_SCHEDULED') {
+                        onVisitSchedule?.(initial);
+                      }
+                    }}
+                  >
                     {PIPELINE_STAGES.map(s => (
                       <MenuItem key={s.key} value={s.key}>
                         <Stack direction="row" alignItems="center" spacing={1}>

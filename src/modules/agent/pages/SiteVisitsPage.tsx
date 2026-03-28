@@ -1,83 +1,167 @@
 // src/modules/agent/pages/SiteVisitsPage.tsx
 import React, { useEffect, useState } from 'react';
 import {
-  Box, Button, Grid, TextField, Select, MenuItem, FormControl,
-  InputLabel, Typography, Dialog, DialogTitle, DialogContent, DialogActions,
+  Box, Button, Grid, Typography, Stack,
 } from '@mui/material';
-import { Add } from '@mui/icons-material';
-import { useAppDispatch, useAppSelector, A, fieldSx, labelSx, selSx } from '../hooks';
-import { fetchVisits, doCreateVisit, doUpdateVisit } from '../store/agentSlice';
-import { PageHeader, VisitCard, StatCard } from '../components/ui';
-import { Map } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+import { AddOutlined, CalendarMonthOutlined, CheckCircleOutlined, PendingActionsOutlined } from '@mui/icons-material';
+import { useAppDispatch, useAppSelector, A } from '../hooks';
+import { fetchVisits, doUpdateVisit } from '../store/agentSlice';
+import { PageHeader, VisitCard, StatCard, Loader } from '../components/ui';
+import ScheduleVisitDialog from './SiteVisits/ScheduleVisitDialog';
+import { VISIT_STATUS_CFG } from './SiteVisits/visitTypes';
 
 export default function SiteVisitsPage() {
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { visits, loading } = useAppSelector(s=>s.agent);
   const [open,   setOpen]   = useState(false);
   const [status, setStatus] = useState('');
-  const [form,   setForm]   = useState({ leadId:'', projectId:'', visitDate:'', notes:'' });
-  const set=(k:string,v:string)=>setForm(p=>({...p,[k]:v}));
   const busy = !!loading.visits;
 
-  useEffect(()=>{ dispatch(fetchVisits({ status:status||undefined })); },[dispatch,status]);
+  useEffect(()=>{ 
+    dispatch(fetchVisits({ status:status||undefined })); 
+  },[dispatch,status]);
 
-  const handleUpdate=(id:string,visitStatus:string)=>dispatch(doUpdateVisit({ id, visitStatus }));
+  const handleUpdate = (id:string, s:string, outcome?:string) => {
+    dispatch(doUpdateVisit({ id, status: s, outcome })).then((res: any) => {
+        dispatch(fetchVisits({ status:status||undefined }));
+        
+        // If booking initiated, redirect to bookings page with lead details
+        if (s === 'COMPLETED' && outcome === 'BOOKING_INITIATED') {
+          const v = visits.data.find(x => x.id === id);
+          if (v) {
+            navigate('/agent/bookings', { 
+              state: { 
+                prefill: {
+                  leadId: v.leadId,
+                  unitId: v.unitId || '',
+                  customerName: v.lead?.customerName || '',
+                  customerPhone: v.lead?.customerPhone || '',
+                  customerEmail: (v.lead as any)?.customerEmail || '',
+                  projectId: v.projectId || '',
+                }
+              } 
+            });
+          }
+        }
+    });
+  };
 
-  const scheduled  = visits.data.filter(v=>v.visitStatus==='SCHEDULED').length;
-  const completed  = visits.data.filter(v=>v.visitStatus==='COMPLETED').length;
+  const scheduled  = visits.data.filter(v=>v.status==='CONFIRMED').length;
+  const pending    = visits.data.filter(v=>['REQUESTED','PENDING_CONFIRMATION'].includes(v.status)).length;
+  const completed  = visits.data.filter(v=>v.status==='COMPLETED').length;
 
   return (
     <Box>
-      <PageHeader title="Site Visits" subtitle={`${visits.total} total`}
+      <PageHeader 
+        title="Site Visits" 
+        subtitle={`${visits.total} visits recorded`}
         action={
-          <Button variant="contained" startIcon={<Add/>} size="small" onClick={()=>setOpen(true)}
-            sx={{ bgcolor:A.primary, textTransform:'none', fontWeight:600, borderRadius:'8px', fontSize:13 }}>
-            Schedule Visit
+          <Button 
+            variant="contained" 
+            startIcon={<AddOutlined/>} 
+            size="small" 
+            onClick={()=>setOpen(true)}
+            sx={{ bgcolor:A.primary, textTransform:'none', fontWeight:700, borderRadius:'10px', px:2 }}
+          >
+            New Visit
           </Button>
         }
       />
-      <Grid container spacing={1.5} mb={2.5}>
-        {[
-          { label:'Scheduled', value:scheduled, accent:A.amber,  icon:<Map/> },
-          { label:'Completed', value:completed, accent:A.green,  icon:<Map/> },
-          { label:'Total',     value:visits.total, accent:A.primary, icon:<Map/> },
-        ].map(c=><Grid item xs={4} key={c.label}><StatCard {...c} loading={busy} compact sub={undefined}/></Grid>)}
+
+      <Grid container spacing={2} mb={3}>
+        <Grid item xs={12} sm={4}>
+          <StatCard 
+            label="Confirmed" 
+            value={scheduled} 
+            accent={A.amber} 
+            icon={<CalendarMonthOutlined/>} 
+            loading={busy}
+          />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <StatCard 
+            label="Pending" 
+            value={pending} 
+            accent={A.primary} 
+            icon={<PendingActionsOutlined/>} 
+            loading={busy}
+          />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <StatCard 
+            label="Completed" 
+            value={completed} 
+            accent={A.green} 
+            icon={<CheckCircleOutlined/>} 
+            loading={busy}
+          />
+        </Grid>
       </Grid>
-      <Box display="flex" gap={1} mb={2} flexWrap="wrap">
-        {['','SCHEDULED','COMPLETED','CANCELLED'].map(s=>(
-          <Button key={s} size="small" onClick={()=>setStatus(s)}
-            sx={{ textTransform:'none', fontSize:12, borderRadius:'8px',
-              bgcolor:status===s?`${A.primary}18`:'transparent',
-              color:status===s?A.primary:A.textSub,
-              border:`1px solid ${status===s?`${A.primary}40`:A.border}` }}>
-            {s||'All'}
+
+      <Box display="flex" gap={1} mb={3} flexWrap="wrap">
+        <Button 
+          size="small" 
+          onClick={()=>setStatus('')}
+          sx={{ 
+            textTransform:'none', fontSize:12, borderRadius:'20px', px:2,
+            bgcolor:status==='' ? `${A.primary}15` : 'transparent',
+            color:status==='' ? A.primary : A.textSub,
+            border:`1px solid ${status==='' ? `${A.primary}40` : A.border}` 
+          }}
+        >
+          All
+        </Button>
+        {Object.entries(VISIT_STATUS_CFG).map(([key, cfg]) => (
+          <Button 
+            key={key} 
+            size="small" 
+            onClick={()=>setStatus(key)}
+            sx={{ 
+              textTransform:'none', fontSize:12, borderRadius:'20px', px:2,
+              bgcolor:status===key ? `${cfg.color}15` : 'transparent',
+              color:status===key ? cfg.color : A.textSub,
+              border:`1px solid ${status===key ? `${cfg.color}40` : A.border}` 
+            }}
+          >
+            {cfg.label}
           </Button>
         ))}
       </Box>
-      {visits.data.map(v=><VisitCard key={v.id} visit={v} onUpdate={handleUpdate}/>)}
-      {visits.data.length===0 && !busy && (
-        <Box py={6} textAlign="center"><Typography sx={{ color:A.textSub, fontSize:14 }}>No site visits</Typography></Box>
+
+      {busy && visits.data.length === 0 ? (
+        <Loader />
+      ) : (
+        <Grid container spacing={2}>
+          {visits.data.map(v => (
+            <Grid item xs={12} sm={6} md={4} key={v.id}>
+              <VisitCard 
+                visit={v} 
+                onUpdate={handleUpdate}
+              />
+            </Grid>
+          ))}
+        </Grid>
       )}
-      <Dialog open={open} onClose={()=>setOpen(false)} maxWidth="sm" fullWidth
-        PaperProps={{ sx:{ bgcolor:A.surface, border:`1px solid ${A.border}`, borderRadius:'14px' } }}>
-        <DialogTitle sx={{ color:A.text, fontWeight:700, fontSize:15, pb:1 }}>Schedule Site Visit</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} mt={0.25}>
-            <Grid item xs={12}><TextField fullWidth size="small" label="Lead ID *" value={form.leadId} onChange={e=>set('leadId',e.target.value)} sx={fieldSx} InputLabelProps={{ sx:labelSx }}/></Grid>
-            <Grid item xs={12}><TextField fullWidth size="small" label="Project ID *" value={form.projectId} onChange={e=>set('projectId',e.target.value)} sx={fieldSx} InputLabelProps={{ sx:labelSx }}/></Grid>
-            <Grid item xs={12}><TextField fullWidth size="small" label="Visit Date & Time *" type="datetime-local" value={form.visitDate} onChange={e=>set('visitDate',e.target.value)} sx={fieldSx} InputLabelProps={{ sx:{...labelSx,shrink:true} }}/></Grid>
-            <Grid item xs={12}><TextField fullWidth size="small" label="Notes" multiline rows={2} value={form.notes} onChange={e=>set('notes',e.target.value)} sx={fieldSx} InputLabelProps={{ sx:labelSx }}/></Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions sx={{ px:3, pb:2.5, gap:1 }}>
-          <Button onClick={()=>setOpen(false)} sx={{ color:A.textSub, textTransform:'none', fontSize:13 }}>Cancel</Button>
-          <Button variant="contained" disabled={!form.leadId||!form.projectId||!form.visitDate}
-            onClick={()=>{ dispatch(doCreateVisit(form)); setOpen(false); }}
-            sx={{ bgcolor:A.primary, textTransform:'none', fontWeight:600, borderRadius:'8px', fontSize:13 }}>
-            Schedule
-          </Button>
-        </DialogActions>
-      </Dialog>
+
+      {visits.data.length === 0 && !busy && (
+        <Box py={10} textAlign="center" sx={{ bgcolor:A.surface, borderRadius:'18px', border:`1px solid ${A.border}` }}>
+          <CalendarMonthOutlined sx={{ fontSize:48, color:A.muted, mb:1.5 }} />
+          <Typography sx={{ color:A.textSub, fontSize:15, fontWeight:500 }}>No site visits found</Typography>
+          <Typography sx={{ color:A.muted, fontSize:13 }}>Try changing the filters or schedule a new one</Typography>
+        </Box>
+      )}
+
+      <ScheduleVisitDialog 
+        open={open}
+        onClose={() => setOpen(false)}
+        onSave={() => {
+          setOpen(false);
+          setStatus(''); // Reset status to All to show the newly created visit
+          dispatch(fetchVisits({ status: undefined }));
+        }}
+      />
     </Box>
   );
 }

@@ -1,6 +1,5 @@
-// src/modules/sales-manager/store/salesSlice.ts
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { salesApi } from '../api/sales.api';
+import { salesApi, getProfile, updateProfile, uploadAvatar } from '../api/sales.api';
 
 export interface DashboardData {
   stats: {
@@ -85,6 +84,7 @@ interface SalesState {
   teams         : Team[];
   activities    : { data: any[]; total: number };
   alerts        : any[];
+  profile       : any | null;
   loading       : Record<string, boolean>;
   error         : string | null;
 }
@@ -102,6 +102,7 @@ const init: SalesState = {
   teams      : [],
   activities : { data: [], total: 0 },
   alerts     : [],
+  profile    : null,
   loading    : {},
   error      : null,
 };
@@ -132,6 +133,11 @@ export const fetchTeams       = th<Team[],void>('teams', async() => (await sales
 export const doCreateTeam     = th<Team,{name:string}>('createTeam', async(b) => (await salesApi.post('/team',b)).data.data);
 export const fetchAlerts      = th<any[],void>('alerts', async() => (await salesApi.get('/alerts')).data.data);
 export const doReadAlert      = th<any,string>('readAlert', async(id) => (await salesApi.put(`/alerts/${id}/read`)).data.data);
+
+// Profile
+export const fetchProfile   = th<any,void>('fetchProfile', async() => (await getProfile()).data.data);
+export const doUpdateProfile= th<any,any>('updateProfile', async(b) => (await updateProfile(b)).data.data);
+export const doUploadAvatar = th<{url:string},File>('uploadAvatar', async(f) => (await uploadAvatar(f)).data.data);
 
 const salesSlice = createSlice({
   name: 'sales', initialState: init,
@@ -169,7 +175,12 @@ const salesSlice = createSlice({
       .addCase(fetchTeams.fulfilled,     (s,a)=>{s.teams=a.payload;})
       .addCase(doCreateTeam.fulfilled,   (s,a)=>{s.teams.unshift(a.payload as any);})
       .addCase(fetchAlerts.fulfilled,    (s,a)=>{s.alerts=a.payload;})
-      .addCase(doReadAlert.fulfilled,    (s,a)=>{ const r=a.payload as any; s.alerts=s.alerts.filter(x=>x.id!==r.id); });
+      .addCase(doReadAlert.fulfilled,    (s,a)=>{ const r=a.payload as any; s.alerts=s.alerts.filter(x=>x.id!==r.id); })
+      
+      // Profile
+      .addCase(fetchProfile.fulfilled,   (s, a) => { s.profile = a.payload; })
+      .addCase(doUpdateProfile.fulfilled, (s, a) => { s.profile = a.payload; })
+      .addCase(doUploadAvatar.fulfilled, (s, a) => { if(s.profile) s.profile.avatarUrl = a.payload.url; });
   },
 });
 

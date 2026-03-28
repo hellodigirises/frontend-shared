@@ -8,7 +8,7 @@ export type NotifCategory  =
 
 export type MessageStatus  = 'SENT' | 'DELIVERED' | 'READ';
 export type ConvType       = 'DIRECT' | 'GROUP';
-export type AnnouncementAudience = 'ALL' | 'AGENTS' | 'MANAGERS' | 'HR' | 'FINANCE' | 'ADMIN';
+export type AnnouncementAudience = 'ALL' | 'AGENTS' | 'MANAGERS' | 'HR' | 'FINANCE' | 'ADMIN' | 'ROLE_SPECIFIC' | 'DEPARTMENT';
 export type EscalationStatus = 'PENDING' | 'ESCALATED' | 'RESOLVED';
 
 // ─── Data Interfaces ──────────────────────────────────────────────────────────
@@ -87,7 +87,9 @@ export interface Announcement {
   title: string;
   body: string;
   audience: AnnouncementAudience;
-  priority: 'URGENT' | 'NORMAL' | 'LOW';
+  department?: string;
+  targetRole?: string;
+  priority: 'HIGH' | 'NORMAL' | 'LOW';
   pinned: boolean;
   scheduledAt?: string;
   publishedAt?: string;
@@ -200,12 +202,14 @@ export const NOTIF_CATEGORY_CFG: Record<NotifCategory, { label: string; icon: st
 };
 
 export const AUDIENCE_CFG: Record<AnnouncementAudience, { label: string; icon: string; color: string }> = {
-  ALL:      { label: 'Everyone',     icon: '🌐', color: '#6366f1' },
-  AGENTS:   { label: 'Agents',       icon: '👤', color: '#10b981' },
-  MANAGERS: { label: 'Managers',     icon: '👔', color: '#0ea5e9' },
-  HR:       { label: 'HR Team',      icon: '👥', color: '#ec4899' },
-  FINANCE:  { label: 'Finance',      icon: '💰', color: '#f59e0b' },
-  ADMIN:    { label: 'Admins',       icon: '🛡',  color: '#8b5cf6' },
+  ALL:           { label: 'Everyone',     icon: '🌐', color: '#6366f1' },
+  AGENTS:        { label: 'Agents',       icon: '👤', color: '#10b981' },
+  MANAGERS:      { label: 'Managers',     icon: '👔', color: '#0ea5e9' },
+  HR:            { label: 'HR Team',      icon: '👥', color: '#ec4899' },
+  FINANCE:       { label: 'Finance',      icon: '💰', color: '#f59e0b' },
+  ADMIN:         { label: 'Admins',       icon: '🛡',  color: '#8b5cf6' },
+  ROLE_SPECIFIC: { label: 'Specific Role',icon: '👤', color: '#10b981' },
+  DEPARTMENT:    { label: 'Department',   icon: '🏢', color: '#8b5cf6' },
 };
 
 export const CHANNEL_CFG: Record<NotifChannel, { label: string; icon: string; color: string }> = {

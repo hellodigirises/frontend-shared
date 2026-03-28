@@ -37,9 +37,11 @@ import {
   AssignmentOutlined, AccountBalanceOutlined, PeopleOutlined,
   CheckBoxOutlined, IndeterminateCheckBoxOutlined, TuneOutlined,
   NavigateNextOutlined, SignalCellularAltOutlined,
+  TableRowsOutlined, GridViewOutlined,
 } from '@mui/icons-material';
 import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom';
+import api from '../../../../api/axios';
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 
@@ -119,13 +121,16 @@ const timeAgo = (dateStr: string) => {
 
 // ─── SHARED: STATUS CONFIG ────────────────────────────────────────────────────
 
-type BStatus = 'BOOKED' | 'HOLD' | 'CANCELLED' | 'RELEASED' | 'TRANSFERRED' | 'AGREEMENT_PENDING';
+type BStatus = 'BOOKED' | 'CONFIRMED' | 'PENDING' | 'ON_HOLD' | 'HOLD' | 'CANCELLED' | 'RELEASED' | 'TRANSFERRED' | 'AGREEMENT_PENDING';
 
-const STATUS_CFG: Record<BStatus, {
+const STATUS_CFG: Record<string, {
   color: string; bg: string; border: string; dot: string; label: string; icon: React.ReactNode;
 }> = {
   BOOKED:             { color: T.green,  bg: T.greenBg,  border: T.greenBdr,  dot: T.green,  label: 'Booked',            icon: <CheckCircleOutlined sx={{ fontSize: 12 }} /> },
+  CONFIRMED:          { color: T.green,  bg: T.greenBg,  border: T.greenBdr,  dot: T.green,  label: 'Confirmed',         icon: <CheckCircleOutlined sx={{ fontSize: 12 }} /> },
+  PENDING:            { color: T.amber,  bg: T.amberBg,  border: T.amberBdr,  dot: T.amber,  label: 'Pending',           icon: <AccessTimeOutlined  sx={{ fontSize: 12 }} /> },
   HOLD:               { color: T.amber,  bg: T.amberBg,  border: T.amberBdr,  dot: T.amber,  label: 'On Hold',           icon: <AccessTimeOutlined  sx={{ fontSize: 12 }} /> },
+  ON_HOLD:            { color: T.amber,  bg: T.amberBg,  border: T.amberBdr,  dot: T.amber,  label: 'On Hold',           icon: <AccessTimeOutlined  sx={{ fontSize: 12 }} /> },
   CANCELLED:          { color: T.red,    bg: T.redBg,    border: T.redBdr,    dot: T.red,    label: 'Cancelled',         icon: <CancelOutlined      sx={{ fontSize: 12 }} /> },
   RELEASED:           { color: T.slate,  bg: T.slateBg,  border: T.slateBdr,  dot: T.slate,  label: 'Released',          icon: <RefreshOutlined     sx={{ fontSize: 12 }} /> },
   TRANSFERRED:        { color: T.purple, bg: T.purpleBg, border: T.purpleBdr, dot: T.purple, label: 'Transferred',       icon: <SwapHorizOutlined   sx={{ fontSize: 12 }} /> },
@@ -227,6 +232,56 @@ const KpiCard = ({ label, value, sub, color, bg, border, icon, trend, onClick }:
 
 // ─── SHARED: SECTION HEADER ───────────────────────────────────────────────────
 
+interface Project {
+  id: string;
+  name: string;
+}
+
+interface Tower {
+  id: string;
+  name: string;
+  project: Project;
+}
+
+interface Floor {
+  id: string;
+  floorNumber: number;
+  tower: Tower;
+}
+
+interface Unit {
+  id: string;
+  unitNumber: string;
+  unitType: string;
+  floorRef: Floor;
+}
+
+interface Agent {
+  id: string;
+  name: string;
+}
+
+interface Booking {
+  id: string;
+  bookingNo: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  status: BStatus;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  totalAmount: number;
+  paidAmount: number;
+  totalValue: number; // For UI mapping
+  bookingDate: string;
+  createdAt: string;
+  unit?: Unit;
+  agent?: Agent;
+  channelPartner?: string;
+  paidInstallments?: number;
+  totalInstallments?: number;
+  project?: string; // Flattened for UI
+}
+
 const PageHeader = ({
   title, subtitle, tag, tagColor = T.brand, actions, breadcrumb,
 }: {
@@ -263,33 +318,7 @@ const PageHeader = ({
   </Box>
 );
 
-// ─── MOCK DATA ────────────────────────────────────────────────────────────────
-
-type BookingStatus = 'BOOKED' | 'HOLD' | 'CANCELLED' | 'RELEASED' | 'TRANSFERRED' | 'AGREEMENT_PENDING';
-
-interface Booking {
-  id: string; bookingNo: string;
-  customerName: string; customerPhone: string; customerEmail: string;
-  project: string; tower: string; floor: string; unit: string; unitType: string;
-  agent: string; agentId: string; channelPartner?: string;
-  bookingAmount: number; totalValue: number; paidAmount: number;
-  paymentPlan: string; bookingDate: string; status: BookingStatus;
-  paidInstallments: number; totalInstallments: number;
-  commissionGenerated: boolean; commissionAmount: number;
-  priority: 'HIGH' | 'MEDIUM' | 'LOW';
-  lastActivity: string; agreementSigned: boolean;
-  posessionDate: string;
-}
-
-const MOCK_BOOKINGS: Booking[] = [
-  { id:'B1', bookingNo:'BK-2026-001', customerName:'Rahul Sharma',   customerPhone:'9876543210', customerEmail:'rahul@email.com',   project:'Skyline Heights',  tower:'A', floor:'3',  unit:'A-302', unitType:'2 BHK', agent:'Priya Mehta',   agentId:'A1', channelPartner:'Elite Realty',    bookingAmount:500000,  totalValue:8500000,  paidAmount:1800000, paymentPlan:'Construction Linked', bookingDate:'2026-04-12', status:'BOOKED',           paidInstallments:2, totalInstallments:6, commissionGenerated:true,  commissionAmount:170000, priority:'HIGH',   lastActivity:'2026-05-10', agreementSigned:true,  posessionDate:'Dec 2027' },
-  { id:'B2', bookingNo:'BK-2026-002', customerName:'Sunita Verma',   customerPhone:'9876543211', customerEmail:'sunita@email.com',  project:'Orchid Residency', tower:'B', floor:'5',  unit:'B-504', unitType:'3 BHK', agent:'Arjun Singh',   agentId:'A2', channelPartner:undefined,         bookingAmount:800000,  totalValue:12000000, paidAmount:800000,  paymentPlan:'Down Payment',        bookingDate:'2026-04-10', status:'AGREEMENT_PENDING',paidInstallments:1, totalInstallments:4, commissionGenerated:false, commissionAmount:0,      priority:'HIGH',   lastActivity:'2026-04-10', agreementSigned:false, posessionDate:'Mar 2028' },
-  { id:'B3', bookingNo:'BK-2026-003', customerName:'Vikram Joshi',   customerPhone:'9876543212', customerEmail:'vikram@email.com',  project:'Skyline Heights',  tower:'C', floor:'7',  unit:'C-701', unitType:'2 BHK', agent:'Priya Mehta',   agentId:'A1', channelPartner:'Metro Brokers',   bookingAmount:450000,  totalValue:7200000,  paidAmount:0,       paymentPlan:'Time Linked',         bookingDate:'2026-04-08', status:'HOLD',             paidInstallments:0, totalInstallments:5, commissionGenerated:false, commissionAmount:144000, priority:'MEDIUM', lastActivity:'2026-04-08', agreementSigned:false, posessionDate:'Sep 2027' },
-  { id:'B4', bookingNo:'BK-2026-004', customerName:'Meena Shah',     customerPhone:'9876543213', customerEmail:'meena@email.com',   project:'Green Valley',     tower:'A', floor:'2',  unit:'A-201', unitType:'1 BHK', agent:'Kavita Joshi',  agentId:'A3', channelPartner:undefined,         bookingAmount:350000,  totalValue:4800000,  paidAmount:2100000, paymentPlan:'Construction Linked', bookingDate:'2026-04-05', status:'BOOKED',           paidInstallments:3, totalInstallments:6, commissionGenerated:true,  commissionAmount:96000,  priority:'MEDIUM', lastActivity:'2026-04-05', agreementSigned:true,  posessionDate:'Jun 2027' },
-  { id:'B5', bookingNo:'BK-2026-005', customerName:'Karan Malhotra', customerPhone:'9876543214', customerEmail:'karan@email.com',   project:'Metro Towers',     tower:'D', floor:'10', unit:'D-1002',unitType:'3 BHK', agent:'Arjun Singh',   agentId:'A2', channelPartner:'Prestige Agents', bookingAmount:900000,  totalValue:15000000, paidAmount:900000,  paymentPlan:'Down Payment',        bookingDate:'2026-04-02', status:'CANCELLED',        paidInstallments:1, totalInstallments:5, commissionGenerated:false, commissionAmount:0,      priority:'LOW',    lastActivity:'2026-04-02', agreementSigned:false, posessionDate:'Dec 2028' },
-  { id:'B6', bookingNo:'BK-2026-006', customerName:'Priya Kapoor',   customerPhone:'9876543215', customerEmail:'priya@email.com',   project:'Orchid Residency', tower:'C', floor:'4',  unit:'C-404', unitType:'2 BHK', agent:'Kavita Joshi',  agentId:'A3', channelPartner:undefined,         bookingAmount:600000,  totalValue:9500000,  paidAmount:6000000, paymentPlan:'Construction Linked', bookingDate:'2026-03-28', status:'TRANSFERRED',      paidInstallments:4, totalInstallments:6, commissionGenerated:true,  commissionAmount:190000, priority:'LOW',    lastActivity:'2026-04-20', agreementSigned:true,  posessionDate:'Sep 2027' },
-  { id:'B7', bookingNo:'BK-2026-007', customerName:'Amit Tiwari',    customerPhone:'9876543216', customerEmail:'amit@email.com',    project:'Skyline Heights',  tower:'B', floor:'8',  unit:'B-801', unitType:'4 BHK', agent:'Priya Mehta',   agentId:'A1', channelPartner:'Elite Realty',    bookingAmount:1200000, totalValue:22000000, paidAmount:18000000,paymentPlan:'Time Linked',         bookingDate:'2026-03-25', status:'BOOKED',           paidInstallments:5, totalInstallments:7, commissionGenerated:true,  commissionAmount:440000, priority:'HIGH',   lastActivity:'2026-05-01', agreementSigned:true,  posessionDate:'Mar 2028' },
-];
+type BookingStatus = BStatus;
 
 const INSTALLMENTS_TEMPLATE = [
   { id:'I1', name:'Booking Amount',       pct:0.06, dueOffset:0  },
@@ -342,23 +371,20 @@ const NewBookingDialog = ({
     return Object.keys(e).length === 0;
   };
 
-  const save = () => {
+  const save = async () => {
     if (!validate()) return;
-    onSave({
-      ...form,
-      id: `B${Date.now()}`,
-      bookingNo: `BK-2026-${String(Math.floor(Math.random() * 900) + 100)}`,
-      bookingDate: new Date().toISOString().slice(0, 10),
-      paidInstallments: 0, totalInstallments: 6,
-      paidAmount: form.bookingAmount || 0,
-      commissionGenerated: !!form.channelPartner,
-      commissionAmount: form.channelPartner ? (form.totalValue || 0) * 0.02 : 0,
-      lastActivity: new Date().toISOString().slice(0, 10),
-      agreementSigned: false,
-    });
-    onClose();
-    setForm({ paymentPlan: 'Construction Linked', status: 'BOOKED', priority: 'MEDIUM' });
-    setStep(0);
+    try {
+      await api.post('/bookings', {
+        ...form,
+        bookingDate: new Date().toISOString(),
+      });
+      onSave(form);
+      onClose();
+      setForm({ paymentPlan: 'Construction Linked', status: 'BOOKED', priority: 'MEDIUM' });
+      setStep(0);
+    } catch (error) {
+      console.error('Failed to create booking:', error);
+    }
   };
 
   const STEPS = ['Customer', 'Property', 'Financials', 'Review'];
@@ -675,7 +701,9 @@ const CancelDialog = ({
               </Avatar>
               <Box>
                 <Typography sx={{ fontFamily: T.body, fontWeight: 800, fontSize: 14, color: T.ink }}>{booking.customerName}</Typography>
-                <Typography sx={{ fontFamily: T.body, fontSize: 12, color: T.inkMd }}>{booking.project} · {booking.unit} · {booking.bookingNo}</Typography>
+                <Typography sx={{ fontFamily: T.body, fontSize: 12, color: T.inkMd }}>
+                  {booking.project} · {typeof booking.unit === 'string' ? booking.unit : booking.unit?.unitNumber} · {booking.bookingNo}
+                </Typography>
                 <Typography sx={{ fontFamily: T.body, fontSize: 12, color: T.red, fontWeight: 700 }}>
                   Collected: {fmtINR(booking.paidAmount)} — will need refund processing
                 </Typography>
@@ -719,7 +747,7 @@ const CancelDialog = ({
         </Button>
         <Box flex={1} />
         <Button variant="contained" disableElevation disabled={!reason}
-          onClick={() => { booking && onConfirm(booking.id, reason); setReason(''); }}
+          onClick={() => { booking && onConfirm(booking.id, 'CANCELLED', reason); }}
           sx={{ textTransform: 'none', fontWeight: 800, fontFamily: T.body, borderRadius: '10px', bgcolor: T.red, '&:hover': { bgcolor: '#a52824' }, boxShadow: 'none', px: 3 }}>
           Confirm Cancellation
         </Button>
@@ -760,7 +788,7 @@ const TransferDialog = ({
             <Box>
               <Typography sx={{ fontFamily: T.body, fontSize: 10.5, fontWeight: 700, color: T.inkLt, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Current Owner</Typography>
               <Typography sx={{ fontFamily: T.body, fontWeight: 800, fontSize: 14, color: T.ink }}>{booking.customerName}</Typography>
-              <Typography sx={{ fontFamily: T.body, fontSize: 12, color: T.inkMd }}>{booking.project} · {booking.unit}</Typography>
+              <Typography sx={{ fontFamily: T.body, fontSize: 12, color: T.inkMd }}>{booking.project} · {typeof booking.unit === 'string' ? booking.unit : booking.unit?.unitNumber}</Typography>
             </Box>
             <SwapHorizOutlined sx={{ color: T.purple, fontSize: 28 }} />
             <Box sx={{ textAlign: 'right' }}>
@@ -810,7 +838,8 @@ const TransferDialog = ({
 
 export const BookingsPage: React.FC = () => {
   const navigate = useNavigate();
-  const [bookings, setBookings] = useState<Booking[]>(MOCK_BOOKINGS);
+  const [data, setData] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [projectFilter, setProjectFilter] = useState('ALL');
@@ -828,69 +857,99 @@ export const BookingsPage: React.FC = () => {
   const [snack, setSnack] = useState<{ open: boolean; msg: string; severity: 'success' | 'error' }>({ open: false, msg: '', severity: 'success' });
   const PAGE_SIZE = 10;
 
+  const fetchBookings = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/bookings');
+      setData(response.data?.data || []);
+    } catch (error) {
+      console.error('Failed to fetch bookings:', error);
+      setSnack({ open: true, msg: 'Failed to load bookings', severity: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
+
+  const handleStatusUpdate = async (id: string, status: string, reason?: string) => {
+    try {
+      await api.patch(`/bookings/${id}/status`, { status, reason });
+      setSnack({ open: true, msg: `Booking marked as ${status}`, severity: 'success' });
+      fetchBookings();
+    } catch (error) {
+      console.error('Status update failed:', error);
+      setSnack({ open: true, msg: 'Failed to update status', severity: 'error' });
+    }
+  };
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    let f = bookings.filter(b =>
-      (!q || b.customerName.toLowerCase().includes(q) || b.bookingNo.toLowerCase().includes(q) || b.unit.toLowerCase().includes(q) || b.project.toLowerCase().includes(q)) &&
+    let f = (data || []).map(b => ({
+      ...b,
+      projectName: b.unit?.floorRef?.tower?.project?.name || 'Unknown',
+      agentName: b.agent?.name || 'Unknown',
+      unitName: b.unit?.unitNumber || 'Unknown',
+    })).filter(b =>
+      (!q || b.customerName.toLowerCase().includes(q) || (b.bookingNo || '').toLowerCase().includes(q) || b.unitName.toLowerCase().includes(q) || b.projectName.toLowerCase().includes(q)) &&
       (statusFilter  === 'ALL' || b.status  === statusFilter) &&
-      (projectFilter === 'ALL' || b.project === projectFilter) &&
-      (agentFilter   === 'ALL' || b.agent   === agentFilter) &&
+      (projectFilter === 'ALL' || b.projectName === projectFilter) &&
+      (agentFilter   === 'ALL' || b.agentName   === agentFilter) &&
       (priorityFilter === 'ALL' || b.priority === priorityFilter)
     );
-    f.sort((a, b) => {
-      const av = a[sortField] as string, bv = b[sortField] as string;
+    f.sort((a: any, b: any) => {
+      const av = a[sortField] || '', bv = b[sortField] || '';
       return sortDir === 'asc' ? av < bv ? -1 : 1 : av > bv ? -1 : 1;
     });
     return f;
-  }, [bookings, search, statusFilter, projectFilter, agentFilter, priorityFilter, sortField, sortDir]);
+  }, [data, search, statusFilter, projectFilter, agentFilter, priorityFilter, sortField, sortDir]);
 
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  const toggleSelect = (id: string) => {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelected(next);
+  };
+
+  const toggleSelectAll = () => {
+    if (selected.size === paginated.length && paginated.length > 0) setSelected(new Set());
+    else setSelected(new Set(paginated.map(b => b.id)));
+  };
+
+  const selectAll = paginated.length > 0 && selected.size === paginated.length;
+
   const stats = useMemo(() => {
-    const active = bookings.filter(b => b.status === 'BOOKED' || b.status === 'AGREEMENT_PENDING');
+    const active = (data || []).filter(b => b.status === 'BOOKED' || b.status === 'CONFIRMED' || b.status === 'AGREEMENT_PENDING');
     return {
-      total: bookings.length,
+      total: (data || []).length,
       active: active.length,
-      hold: bookings.filter(b => b.status === 'HOLD').length,
-      cancelled: bookings.filter(b => b.status === 'CANCELLED').length,
-      pendingAgreement: bookings.filter(b => b.status === 'AGREEMENT_PENDING').length,
-      revenue: active.reduce((s, b) => s + b.totalValue, 0),
-      collected: active.reduce((s, b) => s + b.paidAmount, 0),
-      commissions: bookings.filter(b => b.commissionGenerated).reduce((s, b) => s + b.commissionAmount, 0),
+      hold: (data || []).filter(b => b.status === 'ON_HOLD' || b.status === 'HOLD').length,
+      cancelled: (data || []).filter(b => b.status === 'CANCELLED').length,
+      pendingAgreement: (data || []).filter(b => b.status === 'AGREEMENT_PENDING').length,
+      revenue: active.reduce((s, b) => s + (b.totalAmount || 0), 0),
+      collected: active.reduce((s, b) => s + (b.paidAmount || 0), 0),
+      commissions: (data || []).reduce((s, b) => s + (b.commissionAmount || 0), 0),
     };
-  }, [bookings]);
+  }, [data]);
 
-  const projects = [...new Set(bookings.map(b => b.project))];
-  const agents   = [...new Set(bookings.map(b => b.agent))];
+  const projects = [...new Set(filtered.map(b => b.projectName).filter(Boolean))];
+  const agents   = [...new Set(filtered.map(b => b.agentName).filter(Boolean))];
 
-  const handleSort = (field: keyof Booking) => {
-    setSortField(f => { if (f === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc'); return field; });
-  };
-
-  const toggleSelect = (id: string) => setSelected(s => { const ns = new Set(s); ns.has(id) ? ns.delete(id) : ns.add(id); return ns; });
-  const selectAll = () => setSelected(s => s.size === paginated.length ? new Set() : new Set(paginated.map(b => b.id)));
-
-  const handleBulkStatus = (status: BookingStatus) => {
-    setBookings(p => p.map(b => selected.has(b.id) ? { ...b, status } : b));
-    setSnack({ open: true, msg: `${selected.size} bookings updated to ${status}`, severity: 'success' });
+  const handleBulkStatus = async (status: string) => {
+    for (const id of selected) {
+      await handleStatusUpdate(id, status);
+    }
     setSelected(new Set()); setBulkAnchor(null);
-  };
-
-  const handleCancel = (id: string, reason: string) => {
-    setBookings(p => p.map(b => b.id === id ? { ...b, status: 'CANCELLED' as BookingStatus } : b));
-    setCancelTarget(null);
-    setSnack({ open: true, msg: 'Booking cancelled successfully', severity: 'success' });
-  };
-
-  const addBooking = (data: Partial<Booking>) => {
-    setBookings(p => [data as Booking, ...p]);
-    setSnack({ open: true, msg: `Booking ${data.bookingNo} created successfully`, severity: 'success' });
   };
 
   const exportCSV = () => {
     const rows = [
-      ['Booking No', 'Customer', 'Phone', 'Project', 'Unit', 'Type', 'Agent', 'Total Value', 'Paid', 'Status', 'Date'],
-      ...filtered.map(b => [b.bookingNo, b.customerName, b.customerPhone, b.project, b.unit, b.unitType, b.agent, b.totalValue, b.paidAmount, b.status, b.bookingDate]),
+      ['Booking No', 'Customer', 'Phone', 'Project', 'Unit', 'Agent', 'Total Value', 'Paid', 'Status', 'Date'],
+      ...filtered.map(b => [b.bookingNo, b.customerName, b.customerPhone, b.projectName, b.unitName, b.agentName, b.totalAmount, b.paidAmount, b.status, b.createdAt]),
     ];
     const csv = rows.map(r => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -1046,7 +1105,7 @@ export const BookingsPage: React.FC = () => {
         <Stack direction="row" alignItems="center" spacing={1.5} mt={1.5} flexWrap="wrap">
           <Typography sx={{ fontFamily: T.body, fontSize: 12.5, color: T.inkLt, fontWeight: 600 }}>
             {filtered.length} booking{filtered.length !== 1 ? 's' : ''}
-            {(statusFilter !== 'ALL' || projectFilter !== 'ALL' || agentFilter !== 'ALL' || search) ? ` (filtered from ${bookings.length})` : ''}
+            {(statusFilter !== 'ALL' || projectFilter !== 'ALL' || agentFilter !== 'ALL' || search) ? ` (filtered from ${data.length})` : ''}
           </Typography>
           {[
             statusFilter !== 'ALL' && { label: `Status: ${statusFilter}`, clear: () => setStatusFilter('ALL') },
@@ -1071,8 +1130,8 @@ export const BookingsPage: React.FC = () => {
                   <TableRow sx={{ bgcolor: T.raised }}>
                     <TableCell padding="checkbox" sx={{ pl: 2 }}>
                       <input type="checkbox"
-                        checked={selected.size === paginated.length && paginated.length > 0}
-                        onChange={selectAll} style={{ cursor: 'pointer', accentColor: T.brand }} />
+                        checked={selectAll}
+                        onChange={toggleSelectAll} style={{ cursor: 'pointer', accentColor: T.brand }} />
                     </TableCell>
                     {[
                       { label: 'Booking',  field: 'bookingNo' as keyof Booking },
@@ -1141,20 +1200,20 @@ export const BookingsPage: React.FC = () => {
                         </TableCell>
 
                         <TableCell>
-                          <Typography sx={{ fontFamily: T.body, fontWeight: 700, fontSize: 13, color: T.ink }}>{b.project}</Typography>
+                          <Typography sx={{ fontFamily: T.body, fontWeight: 700, fontSize: 13, color: T.ink }}>{b.projectName}</Typography>
                           <Stack direction="row" spacing={0.5} mt={0.4}>
-                            <Chip label={b.unit} size="small" sx={{ fontSize: 10, height: 18, fontWeight: 800, bgcolor: T.brandLt, color: T.brand, border: `1px solid ${T.brandBdr}` }} />
-                            <Chip label={b.unitType} size="small" sx={{ fontSize: 10, height: 18, fontWeight: 700, bgcolor: T.slateBg, color: T.slate }} />
+                            <Chip label={b.unitName} size="small" sx={{ fontSize: 10, height: 18, fontWeight: 800, bgcolor: T.brandLt, color: T.brand, border: `1px solid ${T.brandBdr}` }} />
+                            <Chip label={b.unit?.unitType || 'Unit'} size="small" sx={{ fontSize: 10, height: 18, fontWeight: 700, bgcolor: T.slateBg, color: T.slate }} />
                           </Stack>
                         </TableCell>
 
                         <TableCell sx={{ minWidth: 160 }}>
-                          <PayProgress paid={b.paidInstallments} total={b.totalInstallments} />
-                          <Typography sx={{ fontFamily: T.body, fontSize: 10.5, color: T.inkLt, mt: 0.3 }}>{fmtCr(b.paidAmount)} of {fmtCr(b.totalValue)}</Typography>
+                          <PayProgress paid={b.paidInstallments || 0} total={b.totalInstallments || 5} />
+                          <Typography sx={{ fontFamily: T.body, fontSize: 10.5, color: T.inkLt, mt: 0.3 }}>{fmtCr(b.paidAmount || 0)} of {fmtCr(b.totalAmount || 0)}</Typography>
                         </TableCell>
 
                         <TableCell>
-                          <Typography sx={{ fontFamily: T.display, fontSize: 18, fontWeight: 700, color: T.ink, letterSpacing: '-0.02em' }}>{fmtCr(b.totalValue)}</Typography>
+                          <Typography sx={{ fontFamily: T.display, fontSize: 18, fontWeight: 700, color: T.ink, letterSpacing: '-0.02em' }}>{fmtCr(b.totalAmount || 0)}</Typography>
                           {b.channelPartner && (
                             <Typography sx={{ fontFamily: T.body, fontSize: 11, color: T.purple }}>{b.channelPartner}</Typography>
                           )}
@@ -1162,10 +1221,10 @@ export const BookingsPage: React.FC = () => {
 
                         <TableCell>
                           <Stack direction="row" spacing={1} alignItems="center">
-                            <Avatar sx={{ width: 24, height: 24, bgcolor: avatarColor(b.agent), fontSize: 9, fontWeight: 800 }}>
-                              {initials(b.agent)}
+                            <Avatar sx={{ width: 24, height: 24, bgcolor: avatarColor(b.agent?.name || 'A'), fontSize: 9, fontWeight: 800 }}>
+                              {initials(b.agent?.name || 'A')}
                             </Avatar>
-                            <Typography sx={{ fontFamily: T.body, fontSize: 12, color: T.inkMd }}>{b.agent.split(' ')[0]}</Typography>
+                            <Typography sx={{ fontFamily: T.body, fontSize: 12, color: T.inkMd }}>{(b.agent?.name || 'Unknown').split(' ')[0]}</Typography>
                           </Stack>
                         </TableCell>
 
@@ -1179,10 +1238,26 @@ export const BookingsPage: React.FC = () => {
                                 <VisibilityOutlined sx={{ fontSize: 16 }} />
                               </IconButton>
                             </Tooltip>
-                            {b.status === 'BOOKED' && (
+                            {b.status === 'PENDING' && (
+                              <>
+                                <Tooltip title="Accept Booking">
+                                  <IconButton size="small" onClick={() => handleStatusUpdate(b.id, 'CONFIRMED')}
+                                    sx={{ color: T.green, '&:hover': { bgcolor: T.greenBg } }}>
+                                    <CheckCircleOutlined sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Hold Booking">
+                                  <IconButton size="small" onClick={() => handleStatusUpdate(b.id, 'ON_HOLD')}
+                                    sx={{ color: T.amber, '&:hover': { bgcolor: T.amberBg } }}>
+                                    <AccessTimeOutlined sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                </Tooltip>
+                              </>
+                            )}
+                            {(b.status === 'BOOKED' || b.status === 'CONFIRMED' || b.status === 'PENDING') && (
                               <Tooltip title="Cancel Booking">
                                 <IconButton size="small" onClick={() => setCancelTarget(b)}
-                                  sx={{ color: T.inkLt, '&:hover': { color: T.red, bgcolor: T.redBg } }}>
+                                  sx={{ color: T.red, '&:hover': { bgcolor: T.redBg } }}>
                                   <CancelOutlined sx={{ fontSize: 16 }} />
                                 </IconButton>
                               </Tooltip>
@@ -1246,11 +1321,11 @@ export const BookingsPage: React.FC = () => {
                         </Stack>
 
                         <Box sx={{ p: 1.5, bgcolor: T.bg, borderRadius: '10px', mb: 2 }}>
-                          <Typography sx={{ fontFamily: T.body, fontWeight: 700, fontSize: 13, color: T.ink }}>{b.project}</Typography>
+                          <Typography sx={{ fontFamily: T.body, fontWeight: 700, fontSize: 13, color: T.ink }}>{b.projectName}</Typography>
                           <Stack direction="row" spacing={0.75} mt={0.5}>
-                            <Chip label={b.unit} size="small" sx={{ fontSize: 10, height: 18, fontWeight: 800, bgcolor: T.brandLt, color: T.brand }} />
-                            <Chip label={b.unitType} size="small" sx={{ fontSize: 10, height: 18 }} />
-                            <Chip label={`F-${b.floor}`} size="small" sx={{ fontSize: 10, height: 18 }} />
+                            <Chip label={b.unitName} size="small" sx={{ fontSize: 10, height: 18, fontWeight: 800, bgcolor: T.brandLt, color: T.brand }} />
+                            <Chip label={b.unit?.unitType || 'N/A'} size="small" sx={{ fontSize: 10, height: 18 }} />
+                            <Chip label={`F-${b.unit?.floorRef?.floorNumber || '0'}`} size="small" sx={{ fontSize: 10, height: 18 }} />
                           </Stack>
                         </Box>
 
@@ -1271,10 +1346,18 @@ export const BookingsPage: React.FC = () => {
 
                         <Stack direction="row" justifyContent="space-between" alignItems="center">
                           <Stack direction="row" spacing={1} alignItems="center">
-                            <Avatar sx={{ width: 22, height: 22, bgcolor: avatarColor(b.agent), fontSize: 8, fontWeight: 800 }}>{initials(b.agent)}</Avatar>
-                            <Typography sx={{ fontFamily: T.body, fontSize: 12, color: T.inkMd }}>{b.agent}</Typography>
+                            <Avatar sx={{ width: 22, height: 22, bgcolor: avatarColor(b.agent?.name || 'A'), fontSize: 8, fontWeight: 800 }}>{initials(b.agent?.name || 'A')}</Avatar>
+                            <Typography sx={{ fontFamily: T.body, fontSize: 12, color: T.inkMd }}>{b.agent?.name || 'Agent'}</Typography>
                           </Stack>
-                          <Typography sx={{ fontFamily: T.body, fontSize: 11, color: T.inkLt }}>{timeAgo(b.bookingDate)}</Typography>
+                          <Stack direction="row" spacing={0.5}>
+                             {b.status === 'PENDING' && (
+                               <>
+                                 <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleStatusUpdate(b.id, 'CONFIRMED'); }} sx={{ color: T.green }}><CheckCircleOutlined sx={{ fontSize: 16 }}/></IconButton>
+                                 <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleStatusUpdate(b.id, 'ON_HOLD'); }} sx={{ color: T.amber }}><AccessTimeOutlined sx={{ fontSize: 16 }}/></IconButton>
+                               </>
+                             )}
+                             <IconButton size="small" onClick={(e) => { e.stopPropagation(); setCancelTarget(b); }} sx={{ color: T.red }}><CancelOutlined sx={{ fontSize: 16 }}/></IconButton>
+                          </Stack>
                         </Stack>
                       </Box>
                     </Card>
@@ -1293,8 +1376,8 @@ export const BookingsPage: React.FC = () => {
       </Box>
 
       {/* Dialogs */}
-      <NewBookingDialog open={newOpen} onClose={() => setNewOpen(false)} onSave={addBooking} />
-      <CancelDialog   booking={cancelTarget}   onClose={() => setCancelTarget(null)}   onConfirm={handleCancel} />
+      <NewBookingDialog open={newOpen} onClose={() => setNewOpen(false)} onSave={() => {}} />
+      <CancelDialog   booking={cancelTarget}   onClose={() => setCancelTarget(null)}   onConfirm={handleStatusUpdate} />
       <TransferDialog booking={transferTarget}  onClose={() => setTransferTarget(null)} />
 
       <Snackbar open={snack.open} autoHideDuration={4000} onClose={() => setSnack(s => ({ ...s, open: false }))}
@@ -1314,58 +1397,88 @@ export const BookingsPage: React.FC = () => {
 export const BookingDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const [booking, setBooking] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState(0);
   const [snack, setSnack] = useState<{ open: boolean; msg: string; severity: 'success' | 'error' }>({ open: false, msg: '', severity: 'success' });
-  const booking = MOCK_BOOKINGS.find(b => b.id === id) ?? MOCK_BOOKINGS[0];
   const [transferOpen, setTransferOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
 
-  const [installments, setInstallments] = useState(() =>
-    INSTALLMENTS_TEMPLATE.map((t, i) => ({
-      id: t.id, name: t.name,
-      amount: Math.round(booking.totalValue * t.pct),
-      dueDate: new Date(Date.now() + t.dueOffset * 86_400_000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-      status: i < booking.paidInstallments ? 'PAID' : 'PENDING' as 'PAID' | 'PENDING' | 'OVERDUE',
-      paidOn: i < booking.paidInstallments ? new Date(Date.now() - (booking.paidInstallments - i) * 30 * 86_400_000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
-    }))
-  );
+  const fetchBooking = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get(`/bookings/${id}`);
+      setBooking(res.data?.data || res.data);
+    } catch (e) {
+      setSnack({ open: true, msg: 'Failed to fetch booking', severity: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
 
-  const TIMELINE = [
-    { date: booking.bookingDate, time: '10:32 AM', event: 'Booking Created', desc: `Registered by ${booking.agent}`, color: T.brand, icon: <HomeOutlined sx={{ fontSize: 14 }} /> },
-    { date: booking.bookingDate, time: '11:00 AM', event: 'Unit Locked', desc: `${booking.unit} status set to BOOKED`, color: T.green, icon: <LockOutlined sx={{ fontSize: 14 }} /> },
-    booking.commissionGenerated && { date: booking.bookingDate, time: '11:15 AM', event: 'Commission Generated', desc: `${fmtINR(booking.commissionAmount)} for ${booking.channelPartner}`, color: T.purple, icon: <PeopleOutlined sx={{ fontSize: 14 }} /> },
-    booking.agreementSigned && { date: booking.bookingDate, time: '2:00 PM', event: 'Agreement Signed', desc: 'Booking agreement executed and uploaded', color: T.blue, icon: <AssignmentOutlined sx={{ fontSize: 14 }} /> },
-    ...installments.filter(i => i.status === 'PAID').map(i => ({
-      date: i.paidOn, time: '04:00 PM', event: 'Payment Received', desc: `${i.name} — ${fmtINR(i.amount)}`, color: T.green, icon: <AccountBalanceOutlined sx={{ fontSize: 14 }} />,
+  useEffect(() => { fetchBooking(); }, [fetchBooking]);
+
+  const handleStatusUpdate = async (bid: string, status: string, reason?: string) => {
+    try {
+      await api.patch(`/bookings/${bid}/status`, { status, reason });
+      setSnack({ open: true, msg: `Booking ${status.toLowerCase()}`, severity: 'success' });
+      fetchBooking();
+    } catch (e) {
+      setSnack({ open: true, msg: 'Action failed', severity: 'error' });
+    }
+  };
+
+  const installments = useMemo(() => {
+    if (!booking?.installments) return [];
+    return booking.installments.map((inst: any) => ({
+      ...inst,
+      name: inst.remarks || `Installment ${inst.installmentNumber}`,
+      amount: inst.amount,
+      dueDate: new Date(inst.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+      status: inst.status,
+      paidOn: inst.paidDate ? new Date(inst.paidDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
+    }));
+  }, [booking]);
+
+  const TIMELINE = useMemo(() => [
+    { date: new Date(booking.createdAt).toLocaleDateString(), time: new Date(booking.createdAt).toLocaleTimeString(), event: 'Booking Created', desc: `Registered by ${booking.agent?.name || 'Agent'}`, color: T.brand, icon: <HomeOutlined sx={{ fontSize: 14 }} /> },
+    { date: new Date(booking.createdAt).toLocaleDateString(), time: new Date(booking.createdAt).toLocaleTimeString(), event: 'Unit Locked', desc: `${booking.unit?.unitNumber} status set to BOOKED`, color: T.green, icon: <LockOutlined sx={{ fontSize: 14 }} /> },
+    booking.commissionAmount > 0 && { date: new Date(booking.createdAt).toLocaleDateString(), time: '', event: 'Commission Generated', desc: `${fmtINR(booking.commissionAmount)} generated for agent`, color: T.purple, icon: <PeopleOutlined sx={{ fontSize: 14 }} /> },
+    ...installments.filter((i: any) => i.status === 'PAID').map((i: any) => ({
+      date: i.paidOn, time: '', event: 'Payment Received', desc: `${i.name} — ${fmtINR(i.amount)}`, color: T.green, icon: <AccountBalanceOutlined sx={{ fontSize: 14 }} />,
     })),
-  ].filter(Boolean) as { date: string; time: string; event: string; desc: string; color: string; icon: React.ReactNode }[];
+  ].filter(Boolean), [booking, installments]);
 
   const DOCUMENTS = [
-    { name: 'Booking Agreement', type: 'PDF', size: '2.1 MB', uploaded: booking.bookingDate, verified: booking.agreementSigned },
-    { name: 'PAN Card Copy',     type: 'PDF', size: '0.4 MB', uploaded: booking.bookingDate, verified: true },
-    { name: 'Aadhar Card',       type: 'PDF', size: '0.6 MB', uploaded: booking.bookingDate, verified: true },
-    { name: 'KYC Form',          type: 'PDF', size: '1.2 MB', uploaded: booking.bookingDate, verified: false },
+    { name: 'Booking Agreement', type: 'PDF', size: '2.1 MB', uploaded: new Date(booking.createdAt).toLocaleDateString(), verified: !!booking.agreementSigned },
+    { name: 'PAN Card Copy',     type: 'PDF', size: '0.4 MB', uploaded: new Date(booking.createdAt).toLocaleDateString(), verified: true },
+    { name: 'Aadhar Card',       type: 'PDF', size: '0.6 MB', uploaded: new Date(booking.createdAt).toLocaleDateString(), verified: true },
   ];
 
   const paidAmt  = installments.filter(i => i.status === 'PAID').reduce((s, i) => s + i.amount, 0);
   const totalAmt = installments.reduce((s, i) => s + i.amount, 0);
   const paidPct  = totalAmt > 0 ? (paidAmt / totalAmt) * 100 : 0;
 
-  const markPaid = (instId: string) => {
-    setInstallments(p => p.map(i => i.id === instId ? {
-      ...i, status: 'PAID' as const,
-      paidOn: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-    } : i));
-    setSnack({ open: true, msg: 'Installment marked as paid', severity: 'success' });
+  const markPaid = async (instId: string) => {
+    try {
+      await api.patch(`/bookings/${id}/installments/${instId}`, { status: 'PAID' });
+      setSnack({ open: true, msg: 'Installment marked as paid', severity: 'success' });
+      fetchBooking();
+    } catch (e) {
+      setSnack({ open: true, msg: 'Failed to update payment', severity: 'error' });
+    }
   };
 
   const cfg = STATUS_CFG[booking.status as BStatus] ?? STATUS_CFG.BOOKED;
+
+  if (loading) return <Box sx={{ p: 5 }}><Skeleton variant="rectangular" height={400} sx={{ borderRadius: '20px' }} /></Box>;
+  if (!booking) return <Box sx={{ p: 5 }}><Typography>Booking not found</Typography></Box>;
 
   return (
     <Box sx={{ bgcolor: T.bg, minHeight: '100vh', pb: 8 }}>
       <PageHeader
         title={booking.customerName}
-        subtitle={`${booking.bookingNo} · ${booking.project} · ${booking.unit}`}
+        subtitle={`${booking.bookingNo || 'Draft'} · ${booking.unit?.floorRef?.tower?.project?.name} · ${booking.unit?.unitNumber}`}
         breadcrumb={
           <Box onClick={() => navigate('/bookings')} sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, px: 1.5, py: 0.5, borderRadius: '8px', border: `1px solid ${T.border}`, cursor: 'pointer', color: T.inkMd, fontFamily: T.body, fontSize: 12.5, fontWeight: 700, transition: 'all .15s', '&:hover': { borderColor: T.brand, color: T.brand, bgcolor: T.brandLt } }}>
             <ArrowBackOutlined sx={{ fontSize: 14 }} /> All Bookings
@@ -1374,21 +1487,33 @@ export const BookingDetailPage: React.FC = () => {
         actions={
           <Stack direction="row" spacing={1.25}>
             <StatusBadge status={booking.status} size="md" />
+            {booking.status === 'PENDING' && (
+              <>
+                <Button startIcon={<CheckCircleOutlined />} onClick={() => handleStatusUpdate(booking.id, 'CONFIRMED')} variant="contained" disableElevation size="small"
+                  sx={{ textTransform: 'none', fontWeight: 800, fontFamily: T.body, borderRadius: '10px', bgcolor: T.green, '&:hover': { bgcolor: '#1a6b3f' } }}>
+                  Accept
+                </Button>
+                <Button startIcon={<AccessTimeOutlined />} onClick={() => handleStatusUpdate(booking.id, 'ON_HOLD')} variant="outlined" size="small"
+                  sx={{ textTransform: 'none', fontWeight: 700, fontFamily: T.body, borderRadius: '10px', borderColor: T.amberBdr, color: T.amber, '&:hover': { bgcolor: T.amberBg } }}>
+                  Hold
+                </Button>
+              </>
+            )}
             <Button startIcon={<SwapHorizOutlined />} onClick={() => setTransferOpen(true)} variant="outlined" size="small"
               sx={{ textTransform: 'none', fontWeight: 700, fontFamily: T.body, borderRadius: '10px', borderColor: T.purpleBdr, color: T.purple, '&:hover': { bgcolor: T.purpleBg } }}>
               Transfer
             </Button>
-            <Button startIcon={<CancelOutlined />} onClick={() => setCancelOpen(true)} variant="outlined" size="small"
-              sx={{ textTransform: 'none', fontWeight: 700, fontFamily: T.body, borderRadius: '10px', borderColor: T.redBdr, color: T.red, '&:hover': { bgcolor: T.redBg } }}>
-              Cancel
-            </Button>
-            <Button startIcon={<EditOutlined />} variant="contained" disableElevation size="small"
-              sx={{ textTransform: 'none', fontWeight: 800, fontFamily: T.body, borderRadius: '10px', bgcolor: T.brand, '&:hover': { bgcolor: T.brandDk } }}>
-              Edit
-            </Button>
+            {(booking.status === 'BOOKED' || booking.status === 'CONFIRMED' || booking.status === 'PENDING') && (
+              <Button startIcon={<CancelOutlined />} onClick={() => setCancelOpen(true)} variant="outlined" size="small"
+                sx={{ textTransform: 'none', fontWeight: 700, fontFamily: T.body, borderRadius: '10px', borderColor: T.redBdr, color: T.red, '&:hover': { bgcolor: T.redBg } }}>
+                Cancel
+              </Button>
+            )}
           </Stack>
         }
       />
+
+      <CancelDialog booking={booking} onClose={() => setCancelOpen(false)} onConfirm={handleStatusUpdate} />
 
       {/* Stats Strip */}
       <Box sx={{ bgcolor: T.surface, borderBottom: `1px solid ${T.border}`, px: { xs: 3, lg: 5 }, py: 2.5 }}>
@@ -1542,7 +1667,7 @@ export const BookingDetailPage: React.FC = () => {
             </Stack>
 
             <Stack spacing={2}>
-              {installments.map((inst, i) => {
+              {installments.map((inst: any, i: number) => {
                 const sc = INST_STATUS[inst.status] ?? INST_STATUS.PENDING;
                 const isPaid = inst.status === 'PAID';
                 const isOverdue = !isPaid && new Date(inst.dueDate) < new Date();
@@ -1708,7 +1833,7 @@ export const BookingDetailPage: React.FC = () => {
           <Box>
             <Typography sx={{ fontFamily: T.display, fontSize: 22, fontWeight: 700, color: T.ink, mb: 3 }}>Activity Timeline</Typography>
             <Stack spacing={0}>
-              {TIMELINE.map((item, i) => (
+              {TIMELINE.map((item: any, i: number) => (
                 <Box key={i} sx={{ display: 'flex', gap: 2.5 }}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
                     <Box sx={{ width: 36, height: 36, borderRadius: '50%', bgcolor: `${item.color}18`, border: `2px solid ${item.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color }}>
@@ -1776,17 +1901,17 @@ export const PaymentSchedulePage: React.FC = () => {
   ), [installments, search, statusFilter, projectFilter]);
 
   const stats = useMemo(() => ({
-    total: installments.reduce((s, i) => s + i.amount, 0),
-    collected: installments.filter(i => i.status === 'PAID').reduce((s, i) => s + i.amount, 0),
-    pending: installments.filter(i => i.status === 'PENDING').reduce((s, i) => s + i.amount, 0),
-    overdue: installments.filter(i => i.status === 'OVERDUE').reduce((s, i) => s + i.amount, 0),
-    overdueCount: installments.filter(i => i.status === 'OVERDUE').length,
+    total: installments.reduce((s: number, i: any) => s + i.amount, 0),
+    collected: installments.filter((i: any) => i.status === 'PAID').reduce((s: number, i: any) => s + i.amount, 0),
+    pending: installments.filter((i: any) => i.status === 'PENDING').reduce((s: number, i: any) => s + i.amount, 0),
+    overdue: installments.filter((i: any) => i.status === 'OVERDUE').reduce((s: number, i: any) => s + i.amount, 0),
+    overdueCount: installments.filter((i: any) => i.status === 'OVERDUE').length,
   }), [installments]);
 
-  const projects = [...new Set(installments.map(i => i.project))];
+  const projects = [...new Set(installments.map((i: any) => i.project))];
 
   const markPaid = (id: string) => {
-    setInstallments(p => p.map(i => i.id === id ? {
+    setInstallments((p: any[]) => p.map((i: any) => i.id === id ? {
       ...i, status: 'PAID' as const,
       paidOn: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
     } : i));
@@ -1815,11 +1940,11 @@ export const PaymentSchedulePage: React.FC = () => {
               color={T.brand} bg={T.brandLt} border={T.brandBdr} icon={<CalendarMonthOutlined />} />
           </Grid>
           <Grid item xs={6} sm={3}>
-            <KpiCard label="Collected" value={fmtCr(stats.collected)} sub={`${installments.filter(i => i.status === 'PAID').length} paid`}
+            <KpiCard label="Collected" value={fmtCr(stats.collected)} sub={`${installments.filter((i: any) => i.status === 'PAID').length} paid`}
               color={T.green} bg={T.greenBg} border={T.greenBdr} icon={<CheckCircleOutlined />} />
           </Grid>
           <Grid item xs={6} sm={3}>
-            <KpiCard label="Pending" value={fmtCr(stats.pending)} sub={`${installments.filter(i => i.status === 'PENDING').length} upcoming`}
+            <KpiCard label="Pending" value={fmtCr(stats.pending)} sub={`${installments.filter((i: any) => i.status === 'PENDING').length} upcoming`}
               color={T.amber} bg={T.amberBg} border={T.amberBdr} icon={<AccessTimeOutlined />} />
           </Grid>
           <Grid item xs={6} sm={3}>
@@ -1889,7 +2014,7 @@ export const PaymentSchedulePage: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filtered.map(inst => {
+                {filtered.map((inst: any) => {
                   const sc = INST_STATUS[inst.status] ?? INST_STATUS.PENDING;
                   return (
                     <TableRow key={inst.id} hover sx={{ '& td': { py: 1.5, borderBottom: `1px solid ${T.border}` }, '&:hover': { bgcolor: T.raised } }}>
@@ -1951,7 +2076,7 @@ export const PaymentSchedulePage: React.FC = () => {
           <Box sx={{ px: 3, py: 1.75, bgcolor: T.raised, borderTop: `1px solid ${T.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography sx={{ fontFamily: T.body, fontSize: 12, color: T.inkLt }}>{filtered.length} installments</Typography>
             <Typography sx={{ fontFamily: T.display, fontSize: 15, fontWeight: 700, color: T.ink, letterSpacing: '-0.02em' }}>
-              Total: {fmtINR(filtered.reduce((s, i) => s + i.amount, 0))}
+              Total: {fmtINR(filtered.reduce((s: number, i: any) => s + i.amount, 0))}
             </Typography>
           </Box>
         </Card>
@@ -1999,11 +2124,11 @@ export const BookingAnalyticsPage: React.FC = () => {
     { label: 'Direct Agent',    count: 3, revenue: 21_000_000, colour: T.brand  },
   ];
 
-  const totalBookings = MONTHLY.reduce((s, m) => s + m.bookings, 0);
-  const totalRevenue  = MONTHLY.reduce((s, m) => s + m.revenue,  0);
-  const totalCancelled = MONTHLY.reduce((s, m) => s + m.cancelled, 0);
-  const maxRevenue = Math.max(...MONTHLY.map(m => m.revenue));
-  const maxBookings = Math.max(...MONTHLY.map(m => m.bookings));
+  const totalBookings = MONTHLY.reduce((s: number, m: any) => s + m.bookings, 0);
+  const totalRevenue  = MONTHLY.reduce((s: number, m: any) => s + m.revenue,  0);
+  const totalCancelled = MONTHLY.reduce((s: number, m: any) => s + m.cancelled, 0);
+  const maxRevenue = Math.max(...MONTHLY.map((m: any) => m.revenue));
+  const maxBookings = Math.max(...MONTHLY.map((m: any) => m.bookings));
 
   return (
     <Box sx={{ bgcolor: T.bg, minHeight: '100vh', pb: 8 }}>
@@ -2137,7 +2262,7 @@ export const BookingAnalyticsPage: React.FC = () => {
         {/* ── PROJECT PERFORMANCE ── */}
         {tab === 1 && (
           <Stack spacing={2}>
-            {PROJECTS.map(p => {
+            {PROJECTS.map((p: any) => {
               const pct = (p.revenue / p.target) * 100;
               return (
                 <Card key={p.name} sx={{ p: 3, borderRadius: '16px', boxShadow: 'none', border: `1.5px solid ${T.border}`, bgcolor: T.surface, transition: 'all .2s', '&:hover': { borderColor: p.colour, boxShadow: `0 8px 24px ${p.colour}10` } }}>

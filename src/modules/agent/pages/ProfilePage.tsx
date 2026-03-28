@@ -1,17 +1,21 @@
 // src/modules/agent/pages/ProfilePage.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Box, Grid, Typography, TextField, Button, Avatar,
-  Chip, Switch, Dialog, DialogTitle, DialogContent,
+  Chip, Dialog, DialogTitle, DialogContent,
   DialogActions, Select, MenuItem, FormControl, InputLabel,
   LinearProgress,
 } from '@mui/material';
-import { Edit, BeachAccess, CloudUpload } from '@mui/icons-material';
+import { Edit, BeachAccess } from '@mui/icons-material';
 import { useAppDispatch, useAppSelector, A, DATE, INR, fieldSx, labelSx, selSx } from '../hooks';
-import { fetchProfile, doUpdateProfile, fetchLeaves, doRequestLeave } from '../store/agentSlice';
+import {
+  fetchProfile,
+  doUpdateProfile,
+  doRequestLeave,
+  fetchLeaves,
+  doUploadAvatar,
+} from '../store/agentSlice';
 import { PageHeader, Card, KVRow } from '../components/ui';
-
-// (KVRow is imported from ../components/ui)
 
 const LEAVE_TYPES = ['CASUAL', 'SICK', 'EARNED', 'MATERNITY', 'PATERNITY', 'UNPAID'];
 
@@ -44,7 +48,7 @@ function LeaveRequestDialog({ open, onClose }: { open: boolean; onClose: () => v
           <Grid item xs={12}>
             <FormControl fullWidth size="small">
               <InputLabel sx={labelSx}>Leave Type</InputLabel>
-              <Select value={f.leaveType} label="Leave Type" onChange={e => set('leaveType', e.target.value)} sx={selSx}>
+              <Select value={f.leaveType} label="Leave Type" onChange={e => set('leaveType', e.target.value as string)} sx={selSx}>
                 {LEAVE_TYPES.map(t => <MenuItem key={t} value={t} sx={{ fontSize: 13 }}>{t}</MenuItem>)}
               </Select>
             </FormControl>
@@ -52,12 +56,12 @@ function LeaveRequestDialog({ open, onClose }: { open: boolean; onClose: () => v
           <Grid item xs={6}>
             <TextField fullWidth size="small" label="Start Date" type="date" value={f.startDate}
               onChange={e => set('startDate', e.target.value)}
-              sx={fieldSx} InputLabelProps={{ sx: { ...labelSx, shrink: true } }} />
+              sx={fieldSx} InputLabelProps={{ shrink: true, sx: labelSx }} />
           </Grid>
           <Grid item xs={6}>
             <TextField fullWidth size="small" label="End Date" type="date" value={f.endDate}
               onChange={e => set('endDate', e.target.value)}
-              sx={fieldSx} InputLabelProps={{ sx: { ...labelSx, shrink: true } }} />
+              sx={fieldSx} InputLabelProps={{ shrink: true, sx: labelSx }} />
           </Grid>
           {days > 0 && (
             <Grid item xs={12}>
@@ -89,57 +93,147 @@ function LeaveRequestDialog({ open, onClose }: { open: boolean; onClose: () => v
 
 function EditProfileDialog({ open, profile, onClose }: { open: boolean; profile: any; onClose: () => void }) {
   const dispatch = useAppDispatch();
-  const [f, setF] = useState({
-    designation: profile?.agentProfile?.designation ?? '',
-    department  : profile?.agentProfile?.department  ?? '',
-    bio         : profile?.agentProfile?.bio         ?? '',
-    skills      : (profile?.agentProfile?.skills ?? []).join(', '),
-    languagesSpoken: (profile?.agentProfile?.languagesSpoken ?? []).join(', '),
-  });
-  const set = (k: string, v: string) => setF(p => ({ ...p, [k]: v }));
+  const ap = profile?.Employee;
+  const aadhar = ap?.documents?.find((d: any) => d.documentType === 'AADHAR')?.docNumber ?? '';
+  const pan = ap?.documents?.find((d: any) => d.documentType === 'PAN')?.docNumber ?? '';
 
-  const save = () => {
-    dispatch(doUpdateProfile({
-      designation: f.designation,
-      department : f.department,
-      bio        : f.bio,
-      skills     : f.skills.split(',').map(s => s.trim()).filter(Boolean),
-      languagesSpoken: f.languagesSpoken.split(',').map(s => s.trim()).filter(Boolean),
-    }));
-    onClose();
+  const [editedProfile, setEditedProfile] = useState({
+    name: profile?.name ?? '',
+    email: profile?.email ?? '',
+    phone: profile?.phone ?? '',
+    role: profile?.role ?? '',
+    designation: ap?.designation ?? '',
+    department: ap?.department ?? '',
+    bio: ap?.bio ?? '',
+    skills: (ap?.skills ?? []).join(', '),
+    languagesSpoken: (ap?.languagesSpoken ?? []).join(', '),
+    aadhar,
+    pan,
+    salary: ap?.salary ?? 0,
+    employmentType: ap?.employmentType ?? 'FULL_TIME',
+    manager: ap?.manager?.name ?? '',
+  });
+
+  useEffect(() => {
+    if (profile) {
+      const ad = ap?.documents?.find((d: any) => d.documentType === 'AADHAR')?.docNumber ?? '';
+      const pn = ap?.documents?.find((d: any) => d.documentType === 'PAN')?.docNumber ?? '';
+      setEditedProfile({
+        name: profile.name || '',
+        email: profile.email || '',
+        phone: profile.phone || '',
+        role: profile.role || '',
+        department: ap?.department || '',
+        designation: ap?.designation || '',
+        bio: ap?.bio || '',
+        skills: (ap?.skills ?? []).join(', '),
+        languagesSpoken: (ap?.languagesSpoken ?? []).join(', '),
+        aadhar: ad,
+        pan: pn,
+        salary: ap?.salary || 0,
+        employmentType: ap?.employmentType || 'FULL_TIME',
+        manager: ap?.manager?.name || '',
+      });
+    }
+  }, [profile, ap]);
+
+  const handleChange = (k: string, v: string) => {
+    setEditedProfile(p => ({ ...p, [k]: v }));
+  };
+
+  const save = async () => {
+    try {
+      await dispatch(doUpdateProfile({
+        name: editedProfile.name,
+        email: editedProfile.email,
+        phone: editedProfile.phone,
+        designation: editedProfile.designation,
+        department: editedProfile.department,
+        bio: editedProfile.bio,
+        skills: editedProfile.skills.split(',').map((s: string) => s.trim()).filter(Boolean),
+        languagesSpoken: editedProfile.languagesSpoken.split(',').map((s: string) => s.trim()).filter(Boolean),
+      })).unwrap();
+      alert('Profile updated successfully');
+      onClose();
+      dispatch(fetchProfile());
+    } catch (error) {
+      alert('Failed to update profile');
+    }
   };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth
       PaperProps={{ sx: { bgcolor: A.surface, border: `1px solid ${A.border}`, borderRadius: '14px' } }}>
       <DialogTitle sx={{ color: A.text, fontWeight: 700, fontSize: 15, pb: 1 }}>Edit Profile</DialogTitle>
-      <DialogContent>
+      <DialogContent dividers>
         <Grid container spacing={2} mt={0.25}>
-          {[
-            ['designation', 'Designation'],
-            ['department',  'Department'],
-          ].map(([k, l]) => (
-            <Grid item xs={6} key={k}>
-              <TextField fullWidth size="small" label={l} value={(f as any)[k]}
-                onChange={e => set(k, e.target.value)}
-                sx={fieldSx} InputLabelProps={{ sx: labelSx }} />
-            </Grid>
-          ))}
           <Grid item xs={12}>
-            <TextField fullWidth size="small" label="Bio" multiline rows={2} value={f.bio}
-              onChange={e => set('bio', e.target.value)}
+            <TextField fullWidth size="small" label="Name" value={editedProfile.name}
+              onChange={e => handleChange('name', e.target.value)}
               sx={fieldSx} InputLabelProps={{ sx: labelSx }} />
           </Grid>
           <Grid item xs={12}>
-            <TextField fullWidth size="small" label="Skills (comma separated)" value={f.skills}
-              onChange={e => set('skills', e.target.value)}
+            <TextField fullWidth size="small" label="Email" value={editedProfile.email}
+              sx={fieldSx} InputLabelProps={{ sx: labelSx }} InputProps={{ readOnly: true }}
+              helperText="Contact admin to change email"
+              FormHelperTextProps={{ sx: { color: A.textSub, fontSize: 10 } }} />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField fullWidth size="small" label="Role" value={editedProfile.role}
+              sx={fieldSx} InputLabelProps={{ sx: labelSx }} InputProps={{ readOnly: true }} />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField fullWidth size="small" label="Phone" value={editedProfile.phone}
+              onChange={e => handleChange('phone', e.target.value)}
+              sx={fieldSx} InputLabelProps={{ sx: labelSx }} />
+          </Grid>
+          <Grid item xs={6}>
+            <TextField fullWidth size="small" label="Department" value={editedProfile.department}
+              sx={fieldSx} InputLabelProps={{ sx: labelSx }} InputProps={{ readOnly: true }} />
+          </Grid>
+          <Grid item xs={6}>
+            <TextField fullWidth size="small" label="Designation" value={editedProfile.designation}
+              sx={fieldSx} InputLabelProps={{ sx: labelSx }} InputProps={{ readOnly: true }} />
+          </Grid>
+          <Grid item xs={6}>
+            <Box sx={{ p: 1, border: `1px dashed ${A.border}`, borderRadius: '8px', bgcolor: 'rgba(255,255,255,0.03)' }}>
+              <Typography sx={{ color: A.textSub, fontSize: 10, textTransform: 'uppercase', mb: 0.5 }}>Aadhar Card</Typography>
+              <Typography sx={{ color: A.text, fontSize: 13, fontWeight: 600 }}>{editedProfile.aadhar || 'Not Provided'}</Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={6}>
+            <Box sx={{ p: 1, border: `1px dashed ${A.border}`, borderRadius: '8px', bgcolor: 'rgba(255,255,255,0.03)' }}>
+              <Typography sx={{ color: A.textSub, fontSize: 10, textTransform: 'uppercase', mb: 0.5 }}>PAN Card</Typography>
+              <Typography sx={{ color: A.text, fontSize: 13, fontWeight: 600 }}>{editedProfile.pan || 'Not Provided'}</Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={6}>
+            <TextField fullWidth size="small" label="Salary" value={editedProfile.salary}
+               sx={fieldSx} InputLabelProps={{ sx: labelSx }} InputProps={{ readOnly: true }} />
+          </Grid>
+          <Grid item xs={6}>
+            <TextField fullWidth size="small" label="Employment Type" value={editedProfile.employmentType}
+               sx={fieldSx} InputLabelProps={{ sx: labelSx }} InputProps={{ readOnly: true }} />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField fullWidth size="small" label="Reporting To (Manager)" value={editedProfile.manager}
+               sx={fieldSx} InputLabelProps={{ sx: labelSx }} InputProps={{ readOnly: true }} />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField fullWidth size="small" label="Bio" multiline rows={2} value={editedProfile.bio}
+              onChange={e => handleChange('bio', e.target.value)}
+              sx={fieldSx} InputLabelProps={{ sx: labelSx }} />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField fullWidth size="small" label="Skills & Competencies (comma separated)" value={editedProfile.skills}
+              onChange={e => handleChange('skills', e.target.value)}
               sx={fieldSx} InputLabelProps={{ sx: labelSx }}
               helperText="e.g. Negotiation, Lead Conversion, Site Tours"
               FormHelperTextProps={{ sx: { color: A.textSub, fontSize: 11 } }} />
           </Grid>
           <Grid item xs={12}>
-            <TextField fullWidth size="small" label="Languages Spoken (comma separated)" value={f.languagesSpoken}
-              onChange={e => set('languagesSpoken', e.target.value)}
+            <TextField fullWidth size="small" label="Languages Spoken (comma separated)" value={editedProfile.languagesSpoken}
+              onChange={e => handleChange('languagesSpoken', e.target.value)}
               sx={fieldSx} InputLabelProps={{ sx: labelSx }} />
           </Grid>
         </Grid>
@@ -157,19 +251,37 @@ function EditProfileDialog({ open, profile, onClose }: { open: boolean; profile:
 
 export default function ProfilePage() {
   const dispatch = useAppDispatch();
-  const { profile, leaves } = useAppSelector(s => s.agent);
-  const [editOpen,  setEditOpen]  = useState(false);
+  const { profile, leaves } = useAppSelector((s: any) => s.agent);
+  const [editOpen, setEditOpen] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     dispatch(fetchProfile());
     dispatch(fetchLeaves());
   }, [dispatch]);
 
-  const ap = profile?.agentProfile;
+  const ap = profile?.Employee;
 
   const LEAVE_STATUS_COLOR: Record<string, string> = {
     PENDING: A.amber, APPROVED: A.green, REJECTED: A.red, CANCELLED: A.textSub,
+  };
+
+  const handlePhotoClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        await dispatch(doUploadAvatar(file)).unwrap();
+        alert('Profile photo updated');
+        dispatch(fetchProfile());
+      } catch (err) {
+        alert('Failed to upload photo');
+      }
+    }
   };
 
   return (
@@ -192,12 +304,30 @@ export default function ProfilePage() {
         <Grid item xs={12} md={4}>
           <Card>
             <Box p={2.5} textAlign="center">
-              <Avatar sx={{
-                width: 80, height: 80, mx: 'auto', mb: 2,
-                bgcolor: A.primary, fontSize: 28, fontWeight: 800,
-              }}>
-                {(profile?.name ?? 'A').charAt(0)}
-              </Avatar>
+              <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                <Avatar
+                  src={profile?.avatarUrl ? `${profile.avatarUrl}${profile.avatarUrl.includes('?') ? '&' : '?' }t=${profile.updatedAt ? new Date(profile.updatedAt).getTime() : '0'}` : undefined}
+                  sx={{
+                    width: 100,
+                    height: 100,
+                    fontSize: '2rem',
+                    bgcolor: 'primary.main',
+                    cursor: 'pointer',
+                    '&:hover': { opacity: 0.8 },
+                    mx: 'auto', mb: 2,
+                  }}
+                  onClick={handlePhotoClick}
+                >
+                  {profile?.name?.charAt(0)}
+                </Avatar>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
+              </Box>
               <Typography sx={{ color: A.text, fontWeight: 700, fontSize: 17 }}>{profile?.name ?? '—'}</Typography>
               <Typography sx={{ color: A.textSub, fontSize: 13 }}>{ap?.designation ?? 'Sales Agent'}</Typography>
               {ap?.department && (
@@ -213,7 +343,7 @@ export default function ProfilePage() {
 
               {ap?.skills?.length > 0 && (
                 <Box mt={2} textAlign="left">
-                  <Typography sx={{ color: A.muted, fontSize: 11, mb: 0.75, textTransform: 'uppercase', letterSpacing: 0.4 }}>Skills</Typography>
+                  <Typography sx={{ color: A.muted, fontSize: 11, mb: 0.75, textTransform: 'uppercase', letterSpacing: 0.4 }}>Skills & Competencies</Typography>
                   <Box display="flex" flexWrap="wrap" gap={0.5}>
                     {ap.skills.map((s: string) => (
                       <Chip key={s} label={s} size="small"
@@ -248,10 +378,14 @@ export default function ProfilePage() {
                   ['Phone',      profile?.phone,   false],
                   ['Role',       profile?.role,    false],
                   ['Emp Code',   ap?.employeeId,   true ],
+                  ['Aadhar',     ap?.documents?.find((d: any) => d.documentType === 'AADHAR')?.docNumber, false],
+                  ['PAN',        ap?.documents?.find((d: any) => d.documentType === 'PAN')?.docNumber,    false],
+                  ['Salary',     INR(ap?.salary), false],
+                  ['Emp Type',   ap?.employmentType, false],
                   ['Manager',    ap?.manager?.name, false],
                   ['Joined',     DATE(ap?.joiningDate), false],
                 ].map(([l, v, m]) => (
-                  <KVRow key={l as string} label={l as string} value={String(v ?? '—')} mono={!!m} />
+                  <KVRow key={l as string} label={l as string} value={String(v ?? '—')} bold={!!m} />
                 ))}
               </Box>
             </Card>

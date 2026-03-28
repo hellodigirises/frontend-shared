@@ -1,6 +1,5 @@
-// src/modules/finance/store/financeSlice.ts
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { financeApi } from '../api/finance.api';
+import { financeApi, getProfile, updateProfile, uploadAvatar } from '../api/finance.api';
 
 const th = <R,A=void>(name: string, fn: (a:A)=>Promise<R>) =>
   createAsyncThunk<R,A>(`finance/${name}`, fn);
@@ -29,6 +28,11 @@ export const fetchBankAccounts    = th<any[],void>('bankAccounts',  async() => (
 export const doCreateBankAccount  = th<any,any>('createBank',     async(b) => (await financeApi.post('/bank-accounts',b)).data.data);
 export const fetchBankTxs         = th<any,any>('bankTxs',        async(p) => (await financeApi.get('/bank-transactions',{params:p})).data.data);
 
+// Profile
+export const fetchProfile   = th<any,void>('fetchProfile', async() => (await getProfile()).data.data);
+export const doUpdateProfile= th<any,any>('updateProfile', async(b) => (await updateProfile(b)).data.data);
+export const doUploadAvatar = th<{url:string},File>('uploadAvatar', async(f) => (await uploadAvatar(f)).data.data);
+
 // ── State ─────────────────────────────────────────────────────────────────────
 interface FinanceState {
   dashboard        : any;
@@ -42,6 +46,7 @@ interface FinanceState {
   vendorPayments   : { data:any[]; total:number };
   bankAccounts     : any[];
   bankTransactions : { data:any[]; total:number };
+  profile          : any | null;
   loading          : Record<string,boolean>;
   error            : string|null;
 }
@@ -49,7 +54,7 @@ const init: FinanceState = {
   dashboard:null, installments:{data:[],total:0}, payments:{data:[],total:0},
   invoices:{data:[],total:0}, receipts:{data:[],total:0}, commissions:{data:[],total:0},
   expenseCategories:[], expenses:{data:[],total:0}, vendorPayments:{data:[],total:0},
-  bankAccounts:[], bankTransactions:{data:[],total:0}, loading:{}, error:null,
+  bankAccounts:[], bankTransactions:{data:[],total:0}, profile: null, loading:{}, error:null,
 };
 
 const financeSlice = createSlice({
@@ -90,7 +95,12 @@ const financeSlice = createSlice({
       .addCase(fetchBankAccounts.fulfilled,(s,a)=>{s.bankAccounts=a.payload;})
       .addCase(doCreateBankAccount.fulfilled,(s,a)=>{s.bankAccounts.push(a.payload);})
       .addCase(fetchBankTxs.pending,   pend('bankTxs'))
-      .addCase(fetchBankTxs.fulfilled, (s,a)=>{s.loading.bankTxs=false;s.bankTransactions=a.payload;});
+      .addCase(fetchBankTxs.fulfilled, (s,a)=>{s.loading.bankTxs=false;s.bankTransactions=a.payload;})
+      
+      // Profile
+      .addCase(fetchProfile.fulfilled, (s, a) => { s.profile = a.payload; })
+      .addCase(doUpdateProfile.fulfilled, (s, a) => { s.profile = a.payload; })
+      .addCase(doUploadAvatar.fulfilled, (s, a) => { if(s.profile) s.profile.avatarUrl = a.payload.url; });
   },
 });
 export const { clearError } = financeSlice.actions;

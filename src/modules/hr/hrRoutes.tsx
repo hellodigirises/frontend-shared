@@ -23,6 +23,7 @@ const PerformancePage    = lazy(() => import('./pages/PerformancePage'));
 const DocumentsPage      = lazy(() => import('./pages/DocumentsPage'));
 const TrainingPage       = lazy(() => import('./pages/TrainingPage'));
 const AnnouncementsPage  = lazy(() => import('./pages/AnnouncementsPage'));
+const ProfilePage        = lazy(() => import('./pages/ProfilePage'));
 
 function Spinner() {
   return (
@@ -49,6 +50,7 @@ export default function HRRoutes() {
         <Route path="documents"        element={<DocumentsPage      />} />
         <Route path="training"         element={<TrainingPage       />} />
         <Route path="announcements"    element={<AnnouncementsPage  />} />
+        <Route path="profile"          element={<ProfilePage        />} />
         <Route path="*"                element={<Navigate to="dashboard" replace />} />
       </Routes>
     </Suspense>

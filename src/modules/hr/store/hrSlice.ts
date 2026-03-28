@@ -76,6 +76,7 @@ interface HRState {
   performance : PerformanceRecord[];
   trainings   : Training[];
   announcements: { data: Announcement[]; total: number };
+  profile     : Employee | null;
   loading     : Record<string, boolean>;
   error       : string | null;
 }
@@ -90,6 +91,7 @@ const init: HRState = {
   performance : [],
   trainings   : [],
   announcements: { data: [], total: 0 },
+  profile     : null,
   loading     : {},
   error       : null,
 };
@@ -148,6 +150,15 @@ export const fetchAnnouncements = th<{ data: Announcement[]; total: number }, Re
   'announcements', async (p) => (await hrApi.get('/announcements', { params: p })).data.data);
 export const doCreateAnnouncement = th<Announcement, any>(
   'createAnnouncement', async (b) => (await hrApi.post('/announcements', b)).data.data);
+
+// Profile
+import * as api from '../api/hr.api';
+export const fetchProfile   = th<Employee, void>(
+  'fetchProfile', async () => (await api.getProfile()).data.data);
+export const doUpdateProfile = th<Employee, any>(
+  'updateProfile', async (b) => (await api.updateProfile(b)).data.data);
+export const doUploadAvatar  = th<{ url: string }, File>(
+  'uploadAvatar', async (f) => (await api.uploadAvatar(f)).data.data);
 
 // ── Slice ─────────────────────────────────────────────────────────────────────
 
@@ -226,7 +237,14 @@ const hrSlice = createSlice({
       .addCase(fetchAnnouncements.pending,   pend('announcements'))
       .addCase(fetchAnnouncements.fulfilled, (s, a) => { s.loading.announcements = false; s.announcements = a.payload; })
       .addCase(fetchAnnouncements.rejected,  fail('announcements'))
-      .addCase(doCreateAnnouncement.fulfilled, (s, a) => { s.announcements.data.unshift(a.payload as any); s.announcements.total++; });
+      .addCase(doCreateAnnouncement.fulfilled, (s, a) => { s.announcements.data.unshift(a.payload as any); s.announcements.total++; })
+
+      // Profile
+      .addCase(fetchProfile.fulfilled, (s, a) => { s.profile = a.payload; })
+      .addCase(doUpdateProfile.fulfilled, (s, a) => { s.profile = a.payload; })
+      .addCase(doUploadAvatar.fulfilled, (s, a) => {
+        if (s.profile) s.profile.avatarUrl = a.payload.url;
+      });
   },
 });
 

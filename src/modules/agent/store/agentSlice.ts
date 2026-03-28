@@ -1,6 +1,7 @@
 // src/modules/agent/store/agentSlice.ts
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { agentApi } from '../api/agent.api';
+import { agentApi, deleteLead } from '../api/agent.api';
+import { uploadAvatar } from '../api/agent.api';
 
 export interface DashboardData {
   stats: {
@@ -26,21 +27,48 @@ export interface Lead {
   ownerAgent?:{ id:string; name:string; avatarUrl?:string };
   activities?:any[];
   followUps?:any[];
+  siteVisits?:any[];
   _count?:{ followUps:number };
 }
 
 export interface FollowUp {
   id:string; leadId:string; activityType:string; notes?:string;
-  nextFollowUpDate?:string; isCompleted:boolean; outcome?:string;
+  nextFollowUpDate?:string; followUpAt?:string; isCompleted:boolean; outcome?:string;
   createdAt:string;
   lead?:{ customerName:string; customerPhone:string; status:string };
 }
 
+export type VisitType = 'PHYSICAL' | 'VIRTUAL' | 'GUIDED' | 'SELF_GUIDED';
+export type VisitStatus = 'PENDING_CONFIRMATION' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW' | 'RESCHEDULED' | 'REQUESTED';
+export type VisitOutcome = 'INTERESTED' | 'NOT_INTERESTED' | 'FOLLOW_UP_NEEDED' | 'BOOKING_INITIATED' | 'NEGOTIATION' | 'LOST';
+export type VisitPriority = 'HIGH' | 'MEDIUM' | 'LOW';
+
 export interface Visit {
-  id:string; leadId:string; projectId:string; visitDate:string;
-  visitStatus:string; notes?:string; feedback?:string;
-  lead?:{ customerName:string; customerPhone:string };
-  project?:{ name:string; city?:string };
+  id:string; 
+  leadId:string; 
+  agentId:string;
+  projectId?:string; 
+  unitId?:string;
+  visitType: VisitType;
+  status: VisitStatus;
+  outcome?: VisitOutcome;
+  priority: VisitPriority;
+  visitDate: string;
+  visitTime: string;
+  durationMinutes: number;
+  checkInLat?: number;
+  checkInLng?: number;
+  checkInAt?: string;
+  checkOutAt?: string;
+  notes?: string;
+  feedback?: any;
+  photoUrls: string[];
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+  lead?: { id: string; customerName: string; customerPhone: string; customerEmail?: string; status: string };
+  project?: { id: string; name: string };
+  unit?: { id: string; unitNumber: string };
 }
 
 export interface Task {
@@ -105,7 +133,7 @@ export const doUpdateLead      = th<Lead,any>('updateLead', async({id,...b}) => 
 export const fetchFollowUps    = th<{data:FollowUp[];total:number},{leadId?:string;completed?:boolean;dueToday?:boolean;skip?:number}>('followUps', async(p) => (await agentApi.get('/followups',{params:p})).data.data);
 export const doCreateFollowUp  = th<FollowUp,any>('createFollowUp', async(b) => (await agentApi.post('/followups',b)).data.data);
 export const doCompleteFollowUp= th<FollowUp,any>('completeFollowUp', async({id,...b}) => (await agentApi.put(`/followups/${id}/complete`,b)).data.data);
-export const fetchVisits       = th<{data:Visit[];total:number},{status?:string;from?:string;to?:string}>('visits', async(p) => (await agentApi.get('/site-visits',{params:p})).data.data);
+export const fetchVisits       = th<{data:Visit[];total:number},{status?:string;from?:string;to?:string;skip?:number;take?:number}>('visits', async(p) => (await agentApi.get('/site-visits',{params:p})).data.data);
 export const doCreateVisit     = th<Visit,any>('createVisit', async(b) => (await agentApi.post('/site-visits',b)).data.data);
 export const doUpdateVisit     = th<Visit,any>('updateVisit', async({id,...b}) => (await agentApi.put(`/site-visits/${id}`,b)).data.data);
 export const fetchBookings     = th<{data:Booking[];total:number},{status?:string}>('bookings', async(p) => (await agentApi.get('/bookings',{params:p})).data.data);
@@ -116,7 +144,9 @@ export const fetchNotifications= th<any[],{unread?:boolean}>('notifications', as
 export const doReadNotif       = th<any,string>('readNotif', async(id) => (await agentApi.put(`/notifications/${id}/read`)).data.data);
 export const fetchLeaves       = th<any[],void>('leaves', async() => (await agentApi.get('/leaves')).data.data);
 export const doRequestLeave    = th<any,any>('requestLeave', async(b) => (await agentApi.post('/leaves',b)).data.data);
+export const doUploadAvatar    = th<any,File>('uploadAvatar', async(f) => (await uploadAvatar(f)).data.data);
 export const doLogLocation     = th<any,any>('logLocation', async(b) => (await agentApi.post('/location-log',b)).data.data);
+export const doDeleteLead      = th<void,string>('deleteLead', async(id) => (await deleteLead(id)).data.data);
 
 const agentSlice = createSlice({
   name:'agent', initialState:init,
@@ -139,6 +169,7 @@ const agentSlice = createSlice({
       .addCase(fetchLeads.fulfilled,     (s,a)=>{s.loading.leads=false;s.leads=a.payload;})
       .addCase(fetchLeadById.fulfilled,  (s,a)=>{ const l=a.payload as any; const i=s.leads.data.findIndex(x=>x.id===l.id); if(i!==-1) s.leads.data[i]=l; })
       .addCase(doUpdateLead.fulfilled,   (s,a)=>{ const l=a.payload as any; const i=s.leads.data.findIndex(x=>x.id===l.id); if(i!==-1) s.leads.data[i]=l; })
+      .addCase(doDeleteLead.fulfilled,   (s,a)=>{ const id=a.meta.arg; s.leads.data=s.leads.data.filter(x=>x.id!==id); s.leads.total--; })
       .addCase(fetchFollowUps.pending,   p('followUps'))
       .addCase(fetchFollowUps.fulfilled, (s,a)=>{s.loading.followUps=false;s.followUps=a.payload;})
       .addCase(doCreateFollowUp.fulfilled,(s,a)=>{s.followUps.data.unshift(a.payload as any);s.followUps.total++;})
@@ -155,6 +186,7 @@ const agentSlice = createSlice({
       .addCase(fetchNotifications.fulfilled,(s,a)=>{s.notifications=a.payload;})
       .addCase(doReadNotif.fulfilled,    (s,a)=>{ const n=a.payload as any; s.notifications=s.notifications.filter(x=>x.id!==n.id); })
       .addCase(fetchLeaves.fulfilled,    (s,a)=>{s.leaves=a.payload;})
+      .addCase(doUploadAvatar.fulfilled, (s,a)=>{if(s.profile) s.profile.avatarUrl=a.payload;})
       .addCase(doRequestLeave.fulfilled, (s,a)=>{s.leaves.unshift(a.payload);});
   },
 });

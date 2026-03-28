@@ -1,35 +1,16 @@
-import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from "axios";
-import { mockEndpoints } from "./mockData";
+import axios from "axios";
 
-// Priority: Env variable > ngrok URL > local backend
-let API_URL = (import.meta as any).env?.VITE_API_URL || "http://localhost:5000/api/v1";
-
-// Robustness: Ensure API_URL ends with /api/v1 if not already present
-if (API_URL && !API_URL.includes('/api/v1')) {
-  // Remove trailing slash if present
-  API_URL = API_URL.replace(/\/$/, "");
-  API_URL = `${API_URL}/api/v1`;
-}
-
-let isBackendOffline = false;
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
 
 export const api = axios.create({
   baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
-    "ngrok-skip-browser-warning": "true",
   },
-  timeout: 10000, 
 });
 
-
-// Function to check if we should use mock data
-const shouldFallbackToMock = (error: any) => {
-  return !error.response || error.code === 'ECONNABORTED' || error.message === 'Network Error';
-};
-
 // Add token and tenant ID to headers if logged in
-api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   const user = localStorage.getItem("user");
   
@@ -37,6 +18,7 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   
+  // Add tenant ID if user is not SUPERADMIN
   if (user && config.headers) {
     try {
       const userData = JSON.parse(user);
@@ -44,71 +26,25 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
         config.headers['X-Tenant-ID'] = userData.tenantId;
       }
     } catch (e) {
-      // Ignore
+      // Ignore parsing errors
     }
   }
   
   return config;
 });
 
-// Response interceptor for 401s and Mock Fallback
-export const applyMockFallback = (instance: any) => {
-  instance.interceptors.response.use(
-    (response: AxiosResponse) => {
-      isBackendOffline = false;
-      return response;
-    },
-    async (error: AxiosError) => {
-      if (error.response && error.response.status === 401) {
-        localStorage.removeItem("token");
-        if (window.location.pathname !== "/login") {
-          window.location.href = "/login";
-        }
-        return Promise.reject(error);
+// Handle 401 errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem("token");
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
       }
-
-      if (shouldFallbackToMock(error) || isBackendOffline) {
-        isBackendOffline = true;
-        console.warn("Backend appears to be offline. Switching to Mock API...");
-        
-        const { url, method } = error.config || {};
-        const lowerMethod = method?.toLowerCase();
-        
-        if (url) {
-          const cleanUrl = url.replace(/\/api\/v1/, "").split('?')[0]; // Strip prefix and params
-          const mockResponse = mockEndpoints[cleanUrl] || mockEndpoints[Object.keys(mockEndpoints).find(k => cleanUrl.includes(k)) || ''];
-          
-          if (mockResponse) {
-            if (cleanUrl.includes('/auth/') || lowerMethod === 'get') {
-              console.log(`[Mock API] Returning specific data for: ${url}`);
-              return {
-                data: { success: true, data: mockResponse },
-                status: 200,
-                statusText: "OK",
-                headers: {},
-                config: error.config,
-              };
-            }
-          }
-        }
-        
-        if (lowerMethod && ['post', 'put', 'delete'].includes(lowerMethod)) {
-            return {
-              data: { success: true, message: "Action performed (Mock)" },
-              status: 200,
-              statusText: "OK",
-              headers: {},
-              config: error.config,
-            };
-        }
-      }
-
-      return Promise.reject(error);
     }
-  );
-};
-
-applyMockFallback(api);
+    return Promise.reject(error);
+  }
+);
 
 export default api;
-

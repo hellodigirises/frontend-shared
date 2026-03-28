@@ -73,12 +73,12 @@ const TenantAdminRoutes: React.FC = () => {
           <Route path="users/:id/profile"         element={<EmployeeProfilePage />} />
 
           {/* CRM & Sales */}
-          <Route path="leads"        element={<LeadsPage />} />
+          <Route path="leads/*"       element={<LeadsPage />} />
           <Route path="customers"    element={<CustomersPage />} />
           <Route path="marketing"    element={<MarketingPage />} />
           <Route path="projects"     element={<ProjectsPage />} />
           <Route path="units"        element={<UnitsPage />} />
-          <Route path="bookings"     element={<BookingsPage />} />
+          <Route path="bookings/*"   element={<BookingsPage />} />
           <Route path="visits"       element={<SiteVisitsPage />} />
 
           {/* Finance */}

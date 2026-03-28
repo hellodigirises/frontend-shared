@@ -4,13 +4,14 @@ import {
   Paper, Divider, Avatar, TextField, FormControl,
   InputLabel, Select, MenuItem, Switch, FormControlLabel,
   Grid, Dialog, DialogTitle, DialogContent, DialogActions,
-  CircularProgress, Alert, Tabs, Tab, InputAdornment
+  CircularProgress, Alert, Tabs, Tab, InputAdornment, Tooltip
 } from '@mui/material';
 import {
   AddOutlined, CloseOutlined, SendOutlined,
-  PushPinOutlined, ArchiveOutlined, MarkEmailReadOutlined,
+  PushPinOutlined, PushPin, ArchiveOutlined, MarkEmailReadOutlined,
   AnnouncementOutlined, FeedOutlined, SettingsOutlined,
-  HistoryOutlined, NotificationsActiveOutlined, ScheduleOutlined
+  HistoryOutlined, NotificationsActiveOutlined, ScheduleOutlined,
+  DeleteOutline
 } from '@mui/icons-material';
 import {
   Announcement, ActivityFeedItem, NotificationPreferences,
@@ -24,10 +25,12 @@ import api from '../../../../api/axios';
 // ─── Announcements Page ───────────────────────────────────────────────────────
 
 export const AnnouncementsPage: React.FC<{
-  announcements: Announcement[];
+  announcements?: Announcement[];
   currentRole: string;
   onRefresh: () => void;
-}> = ({ announcements, currentRole, onRefresh }) => {
+  onDelete?: (id: string) => void;
+  onPin?: (id: string) => void;
+}> = ({ announcements = [], currentRole, onRefresh, onDelete, onPin }) => {
   const [createOpen, setCreateOpen] = useState(false);
   const isAdmin = currentRole === 'ADMIN' || currentRole === 'TENANT_ADMIN';
 
@@ -62,7 +65,7 @@ export const AnnouncementsPage: React.FC<{
           </Typography>
           <Stack spacing={2}>
             {pinned.map(a => (
-              <AnnouncementCard key={a.id} announcement={a} isAdmin={isAdmin} onRefresh={onRefresh} />
+              <AnnouncementCard key={a.id} announcement={a} isAdmin={isAdmin} onRefresh={onRefresh} onDelete={onDelete} onPin={onPin} />
             ))}
           </Stack>
         </Box>
@@ -80,7 +83,7 @@ export const AnnouncementsPage: React.FC<{
       ) : (
         <Stack spacing={2}>
           {recent.map(a => (
-            <AnnouncementCard key={a.id} announcement={a} isAdmin={isAdmin} onRefresh={onRefresh} />
+            <AnnouncementCard key={a.id} announcement={a} isAdmin={isAdmin} onRefresh={onRefresh} onDelete={onDelete} onPin={onPin} />
           ))}
         </Stack>
       )}
@@ -91,9 +94,15 @@ export const AnnouncementsPage: React.FC<{
   );
 };
 
-const AnnouncementCard: React.FC<{ announcement: Announcement; isAdmin: boolean; onRefresh: () => void }> = ({ announcement: a, isAdmin, onRefresh }) => {
+const AnnouncementCard: React.FC<{ 
+  announcement: Announcement; 
+  isAdmin: boolean; 
+  onRefresh: () => void;
+  onDelete?: (id: string) => void;
+  onPin?: (id: string) => void;
+}> = ({ announcement: a, isAdmin, onRefresh, onDelete, onPin }) => {
   const audienceCfg = AUDIENCE_CFG[a.audience];
-  const isUrgent = a.priority === 'URGENT';
+  const isUrgent = a.priority === 'HIGH';
   const readPct = a.totalRecipients > 0 ? Math.round(a.readCount / a.totalRecipients * 100) : 0;
 
   return (
@@ -116,8 +125,11 @@ const AnnouncementCard: React.FC<{ announcement: Announcement; isAdmin: boolean;
               <Typography variant="h6" fontWeight={800} sx={{ color: '#0f172a' }}>{a.title}</Typography>
             </Stack>
             <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
-              <Chip label={`${audienceCfg.icon} ${audienceCfg.label}`} size="small"
-                sx={{ bgcolor: audienceCfg.color + '15', color: audienceCfg.color, fontWeight: 800, fontSize: 10, height: 20 }} />
+              <Chip 
+                label={`${audienceCfg.icon} ${audienceCfg.label}${a.audience === 'ROLE_SPECIFIC' && a.targetRole ? `: ${a.targetRole}` : a.audience === 'DEPARTMENT' && a.department ? `: ${a.department}` : ''}`} 
+                size="small"
+                sx={{ bgcolor: audienceCfg.color + '15', color: audienceCfg.color, fontWeight: 800, fontSize: 10, height: 20 }} 
+              />
               <Stack direction="row" spacing={0.5} alignItems="center">
                 <Avatar sx={{ width: 18, height: 18, fontSize: 8, bgcolor: avatarColor(a.createdBy.name), fontWeight: 800 }}>
                   {initials(a.createdBy.name)}
@@ -129,6 +141,16 @@ const AnnouncementCard: React.FC<{ announcement: Announcement; isAdmin: boolean;
           </Box>
           {isAdmin && (
             <Stack direction="row" spacing={0.5}>
+              <Tooltip title={a.pinned ? "Unpin" : "Pin to top"}>
+                <IconButton size="small" onClick={() => onPin?.(a.id)}>
+                  {a.pinned ? <PushPin sx={{ fontSize: 16, color: '#6366f1' }} /> : <PushPinOutlined sx={{ fontSize: 16 }} />}
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Delete Announcement">
+                <IconButton size="small" onClick={() => onDelete?.(a.id)} sx={{ '&:hover': { color: '#ef4444' } }}>
+                  <DeleteOutline sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Tooltip>
               <IconButton size="small"><ArchiveOutlined sx={{ fontSize: 16 }} /></IconButton>
             </Stack>
           )}
@@ -170,7 +192,11 @@ const CreateAnnouncementDialog: React.FC<{ open: boolean; onClose: () => void; o
 
   const handleSave = async () => {
     setSaving(true);
-    try { await api.post('/announcements', form); onSave(); onClose(); }
+    try { 
+      await api.post('/communications/announcements', form); 
+      onSave(); 
+      onClose(); 
+    }
     catch (e) { console.error(e); }
     finally { setSaving(false); }
   };
@@ -207,7 +233,7 @@ const CreateAnnouncementDialog: React.FC<{ open: boolean; onClose: () => void; o
             <FormControl fullWidth size="small">
               <InputLabel>Priority</InputLabel>
               <Select value={form.priority} label="Priority" onChange={e => set('priority', e.target.value)} sx={{ borderRadius: 2.5 }}>
-                {[['URGENT', '🚨 Urgent'], ['NORMAL', '📢 Normal'], ['LOW', '📌 Low']].map(([v, l]) => <MenuItem key={v} value={v}>{l}</MenuItem>)}
+                {[['HIGH', '🚨 Urgent'], ['NORMAL', '📢 Normal'], ['LOW', '📌 Low']].map(([v, l]) => <MenuItem key={v} value={v}>{l}</MenuItem>)}
               </Select>
             </FormControl>
           </Stack>
@@ -237,7 +263,7 @@ const CreateAnnouncementDialog: React.FC<{ open: boolean; onClose: () => void; o
 
 // ─── Activity Feed ────────────────────────────────────────────────────────────
 
-export const ActivityFeed: React.FC<{ activities: ActivityFeedItem[]; compact?: boolean }> = ({ activities, compact = false }) => {
+export const ActivityFeed: React.FC<{ activities?: ActivityFeedItem[]; compact?: boolean }> = ({ activities = [], compact = false }) => {
   const grouped = activities.reduce((m, a) => {
     const d = new Date(a.timestamp);
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -328,16 +354,16 @@ export const NotificationPreferencesPage: React.FC<{
   const [saved, setSaved] = useState(false);
 
   const setEmail = (k: keyof NotificationPreferences['email'], v: boolean) =>
-    setPrefs(p => ({ ...p, email: { ...p.email, [k]: v } }));
+    setPrefs((p: any) => ({ ...p, email: { ...p.email, [k]: v } }));
   const setInApp = (k: keyof NotificationPreferences['inApp'], v: any) =>
-    setPrefs(p => ({ ...p, inApp: { ...p.inApp, [k]: v } }));
+    setPrefs((p: any) => ({ ...p, inApp: { ...p.inApp, [k]: v } }));
   const setPush = (k: keyof NotificationPreferences['push'], v: any) =>
-    setPrefs(p => ({ ...p, push: { ...p.push, [k]: v } }));
+    setPrefs((p: any) => ({ ...p, push: { ...p.push, [k]: v } }));
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      await api.put('/users/notification-settings', prefs);
+      await api.put('/communications/users/notification-settings', prefs);
       onSave(prefs); setSaved(true); setTimeout(() => setSaved(false), 2500);
     } catch (e) { console.error(e); }
     finally { setSaving(false); }
@@ -365,7 +391,7 @@ export const NotificationPreferencesPage: React.FC<{
               { v: 'DAILY', l: '📅 Daily', sub: 'Morning digest' },
               { v: 'WEEKLY', l: '📆 Weekly', sub: 'Weekly summary' },
             ].map(d => (
-              <Box key={d.v} onClick={() => setPrefs(p => ({ ...p, digest: d.v as any }))}
+              <Box key={d.v} onClick={() => setPrefs((p: any) => ({ ...p, digest: d.v as any }))}
                 sx={{
                   flex: '1 1 100px', p: 2, borderRadius: 3, textAlign: 'center', cursor: 'pointer', border: '2px solid',
                   borderColor: prefs.digest === d.v ? '#6366f1' : '#e5e7eb',
@@ -476,9 +502,9 @@ export const NotificationPreferencesPage: React.FC<{
 // ─── Communication History ────────────────────────────────────────────────────
 
 export const CommunicationHistoryPanel: React.FC<{
-  logs: CommunicationLog[];
+  logs?: CommunicationLog[];
   escalations?: EscalationRecord[];
-}> = ({ logs, escalations = [] }) => {
+}> = ({ logs = [], escalations = [] }) => {
   const [tab, setTab] = useState(0);
 
   return (

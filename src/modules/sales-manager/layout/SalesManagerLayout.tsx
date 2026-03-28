@@ -3,13 +3,13 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import {
   Box, Drawer, List, ListItemButton, ListItemIcon, ListItemText,
-  Typography, Avatar, Divider, Tooltip, IconButton, Badge,
+  Typography, Avatar, Divider, Tooltip, IconButton, Badge, Menu, MenuItem,
 } from '@mui/material';
 import {
   Dashboard, PersonAdd, ViewKanban, Handshake, Map,
   TrackChanges, Timeline, Public, Groups, EmojiEvents,
   Assessment, MenuOpen, Menu as MenuIcon, Logout,
-  NotificationsNone, Bolt,
+  NotificationsNone, Bolt, Person, Settings,
 } from '@mui/icons-material';
 import { S } from '../hooks';
 import { useAppSelector } from '../hooks';
@@ -32,13 +32,25 @@ const NAV = [
 
 export default function SalesManagerLayout({ children }: { children?: React.ReactNode }) {
   const [collapsed, setC] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
   const nav = useNavigate();
   const loc = useLocation();
   const managerState = useAppSelector(s => s.sales);
+  const profile = managerState?.profile;
   const alerts = managerState?.alerts || [];
   
   const dw = collapsed ? WC : W;
   const on = (path: string) => loc.pathname.startsWith(path);
+
+  const handleMenuOpen = (e: React.MouseEvent<HTMLElement>) => setAnchorEl(e.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
+
+  const handleLogout = () => {
+    handleMenuClose();
+    localStorage.removeItem('token');
+    nav('/login');
+  };
 
   return (
     <Box sx={{ display:'flex', minHeight:'100vh', bgcolor:S.bg }}>
@@ -92,12 +104,18 @@ export default function SalesManagerLayout({ children }: { children?: React.Reac
 
         <Divider sx={{ borderColor:S.border }}/>
         <Box sx={{ display:'flex', alignItems:'center', gap:1.25, px:collapsed?1:2, py:1.5, flexShrink:0 }}>
-          <Avatar sx={{ width:30, height:30, bgcolor:S.primary, fontSize:11, fontWeight:700, flexShrink:0 }}>SM</Avatar>
+          <Avatar 
+            src={profile?.avatarUrl}
+            onClick={handleMenuOpen}
+            sx={{ width:30, height:30, bgcolor:S.primary, fontSize:11, fontWeight:700, flexShrink:0, cursor:'pointer' }}
+          >
+            {(profile?.name ?? 'SM').charAt(0)}
+          </Avatar>
           {!collapsed && <Box flex={1} minWidth={0}>
-            <Typography sx={{ color:S.text, fontSize:12, fontWeight:600 }} noWrap>Sales Manager</Typography>
-            <Typography sx={{ color:S.textSub, fontSize:10.5 }} noWrap>manager@company.io</Typography>
+            <Typography sx={{ color:S.text, fontSize:12, fontWeight:600 }} noWrap>{profile?.name ?? 'Sales Manager'}</Typography>
+            <Typography sx={{ color:S.textSub, fontSize:10.5 }} noWrap>{profile?.email ?? 'manager@company.io'}</Typography>
           </Box>}
-          {!collapsed && <IconButton size="small" sx={{ color:S.muted, '&:hover':{color:S.coral}, flexShrink:0 }}><Logout sx={{fontSize:14}}/></IconButton>}
+          {!collapsed && <IconButton size="small" onClick={handleLogout} sx={{ color:S.muted, '&:hover':{color:S.coral}, flexShrink:0 }}><Logout sx={{fontSize:14}}/></IconButton>}
         </Box>
       </Drawer>
 
@@ -108,13 +126,56 @@ export default function SalesManagerLayout({ children }: { children?: React.Reac
           <Badge badgeContent={alerts.length} color="error" max={99}>
             <IconButton size="small" sx={{ color:S.muted }}><NotificationsNone sx={{fontSize:18}}/></IconButton>
           </Badge>
-          <Avatar sx={{ width:28, height:28, bgcolor:S.primary, fontSize:10, fontWeight:700 }}>SM</Avatar>
+          <Avatar 
+            src={profile?.avatarUrl}
+            onClick={handleMenuOpen}
+            sx={{ width:28, height:28, bgcolor:S.primary, fontSize:10, fontWeight:700, cursor:'pointer' }}
+          >
+            {(profile?.name ?? 'SM').charAt(0)}
+          </Avatar>
         </Box>
         <Box sx={{ flex:1, overflowY:'auto', p:{xs:2,md:3},
           '&::-webkit-scrollbar':{width:6}, '&::-webkit-scrollbar-thumb':{bgcolor:'rgba(255,255,255,0.07)',borderRadius:3} }}>
           {children || <Outlet />}
         </Box>
       </Box>
+
+      {/* Profile Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleMenuClose}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        PaperProps={{
+          sx: {
+            bgcolor: S.surface,
+            border: `1px solid ${S.border}`,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+            mt: 1,
+            minWidth: 160,
+            '& .MuiMenuItem-root': {
+              fontSize: 13,
+              color: S.textSub,
+              gap: 1.5,
+              py: 1,
+              '&:hover': { bgcolor: `${S.primary}10`, color: S.text },
+              '& .MuiSvgIcon-root': { fontSize: 18, color: S.muted }
+            }
+          }
+        }}
+      >
+        <MenuItem onClick={() => { handleMenuClose(); nav('/manager/profile'); }}>
+          <Person /> My Profile
+        </MenuItem>
+        <MenuItem onClick={() => { handleMenuClose(); nav('/manager/settings'); }}>
+          <Settings /> Settings
+        </MenuItem>
+        <Divider sx={{ borderColor: S.border }} />
+        <MenuItem onClick={handleLogout} sx={{ color: `${S.coral} !important` }}>
+          <Logout sx={{ color: `${S.coral} !important` }} /> Logout
+        </MenuItem>
+      </Menu>
     </Box>
   );
 }

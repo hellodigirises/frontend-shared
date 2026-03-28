@@ -3,14 +3,14 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import {
   Box, Drawer, List, ListItemButton, ListItemIcon, ListItemText,
-  Typography, Avatar, Divider, Tooltip, IconButton, Chip,
+  Typography, Avatar, Divider, Tooltip, IconButton, Chip, Menu, MenuItem,
 } from '@mui/material';
 import { 
   Dashboard, People, AccessTime, BeachAccess, AccountBalance, 
   BarChart, Folder, School, Campaign, MenuOpen, Menu as MenuIcon, 
-  Logout, NotificationsNone, ChevronRight,
+  Logout, NotificationsNone, ChevronRight, Person, Settings,
 } from '@mui/icons-material';
-import { H } from '../hooks';
+import { H, useAppSelector } from '../hooks';
 import NotificationBell from '../../../components/NotificationBell';
 
 const W  = 248;
@@ -30,11 +30,23 @@ const NAV = [
 
 export default function HRLayout({ children }: { children?: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
   const nav = useNavigate();
   const loc = useLocation();
+  const profile = useAppSelector(s => s.hr.profile);
   const dw  = collapsed ? WC : W;
 
   const active = (path: string) => loc.pathname.startsWith(path);
+
+  const handleMenuOpen = (e: React.MouseEvent<HTMLElement>) => setAnchorEl(e.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
+
+  const handleLogout = () => {
+    handleMenuClose();
+    localStorage.removeItem('token');
+    nav('/login');
+  };
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: H.bg }}>
@@ -124,15 +136,21 @@ export default function HRLayout({ children }: { children?: React.ReactNode }) {
 
         <Divider sx={{ borderColor: H.border }} />
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, px: collapsed ? 1 : 2, py: 1.5, flexShrink: 0 }}>
-          <Avatar sx={{ width: 30, height: 30, bgcolor: H.primary, fontSize: 11, fontWeight: 700, flexShrink: 0 }}>HR</Avatar>
+          <Avatar 
+            src={profile?.avatarUrl}
+            onClick={handleMenuOpen}
+            sx={{ width: 30, height: 30, bgcolor: H.primary, fontSize: 11, fontWeight: 700, flexShrink: 0, cursor: 'pointer' }}
+          >
+            {(profile?.name ?? 'HR').charAt(0)}
+          </Avatar>
           {!collapsed && (
             <Box flex={1} minWidth={0}>
-              <Typography sx={{ color: H.text, fontSize: 12, fontWeight: 600 }} noWrap>HR Admin</Typography>
-              <Typography sx={{ color: H.textSub, fontSize: 10.5 }} noWrap>hr@company.io</Typography>
+              <Typography sx={{ color: H.text, fontSize: 12, fontWeight: 600 }} noWrap>{profile?.name ?? 'HR Admin'}</Typography>
+              <Typography sx={{ color: H.textSub, fontSize: 10.5 }} noWrap>{profile?.email ?? 'hr@company.io'}</Typography>
             </Box>
           )}
           {!collapsed && (
-            <IconButton size="small" sx={{ color: H.muted, '&:hover': { color: H.coral }, flexShrink: 0 }}>
+            <IconButton size="small" onClick={handleLogout} sx={{ color: H.muted, '&:hover': { color: H.coral }, flexShrink: 0 }}>
               <Logout sx={{ fontSize: 14 }} />
             </IconButton>
           )}
@@ -148,7 +166,13 @@ export default function HRLayout({ children }: { children?: React.ReactNode }) {
           <Chip label="HR System Active" size="small"
             sx={{ bgcolor: 'rgba(20,184,166,0.1)', color: H.teal, fontWeight: 600, fontSize: 10.5, height: 22 }} />
           <NotificationBell />
-          <Avatar sx={{ width: 28, height: 28, bgcolor: H.primary, fontSize: 10, fontWeight: 700 }}>HR</Avatar>
+          <Avatar 
+            src={profile?.avatarUrl}
+            onClick={handleMenuOpen}
+            sx={{ width: 28, height: 28, bgcolor: H.primary, fontSize: 10, fontWeight: 700, cursor: 'pointer' }}
+          >
+            {(profile?.name ?? 'HR').charAt(0)}
+          </Avatar>
         </Box>
 
         <Box sx={{ flex: 1, overflowY: 'auto', p: { xs: 2, md: 3 },
@@ -158,6 +182,43 @@ export default function HRLayout({ children }: { children?: React.ReactNode }) {
           {children || <Outlet />}
         </Box>
       </Box>
+
+      {/* Profile Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleMenuClose}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        PaperProps={{
+          sx: {
+            bgcolor: H.surface,
+            border: `1px solid ${H.border}`,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+            mt: 1,
+            minWidth: 160,
+            '& .MuiMenuItem-root': {
+              fontSize: 13,
+              color: H.textSub,
+              gap: 1.5,
+              py: 1,
+              '&:hover': { bgcolor: `${H.primary}10`, color: H.text },
+              '& .MuiSvgIcon-root': { fontSize: 18, color: H.muted }
+            }
+          }
+        }}
+      >
+        <MenuItem onClick={() => { handleMenuClose(); nav('/hr/profile'); }}>
+          <Person /> My Profile
+        </MenuItem>
+        <MenuItem onClick={() => { handleMenuClose(); nav('/hr/settings'); }}>
+          <Settings /> Settings
+        </MenuItem>
+        <Divider sx={{ borderColor: H.border }} />
+        <MenuItem onClick={handleLogout} sx={{ color: `${H.coral} !important` }}>
+          <Logout sx={{ color: `${H.coral} !important` }} /> Logout
+        </MenuItem>
+      </Menu>
     </Box>
   );
 }

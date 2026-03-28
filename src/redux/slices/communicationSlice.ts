@@ -12,6 +12,7 @@ export interface Notification {
   priority: 'HIGH' | 'NORMAL' | 'LOW';
   category?: string;
   actionUrl?: string;
+  isPinned?: boolean;
 }
 
 interface CommunicationState {
@@ -33,7 +34,7 @@ export const fetchNotifications = createAsyncThunk(
   'communication/fetchNotifications',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/notifications');
+      const response = await api.get('/communications/notifications?limit=100');
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || 'Failed to fetch notifications');
@@ -45,10 +46,38 @@ export const markAsRead = createAsyncThunk(
   'communication/markAsRead',
   async ({ ids, all }: { ids?: string[]; all?: boolean }, { rejectWithValue }) => {
     try {
-      await api.post('/notifications/read', { ids, all });
+      if (all) {
+        await api.put('/communications/notifications/mark-all-read');
+      } else if (ids && ids.length > 0) {
+        await Promise.all(ids.map(id => api.put(`/communications/notifications/${id}/read`)));
+      }
       return { ids, all };
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || 'Failed to mark as read');
+    }
+  }
+);
+
+export const deleteNotification = createAsyncThunk(
+  'communication/deleteNotification',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      await api.delete(`/communications/notifications/${id}`);
+      return id;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to delete notification');
+    }
+  }
+);
+
+export const togglePin = createAsyncThunk(
+  'communication/togglePin',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(`/communications/notifications/${id}/pin`);
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to toggle pin');
     }
   }
 );
@@ -72,7 +101,7 @@ const communicationSlice = createSlice({
       })
       .addCase(fetchNotifications.fulfilled, (state, action) => {
         state.loading = false;
-        state.notifications = action.payload.data;
+        state.notifications = action.payload.data || [];
         state.unreadCount = action.payload.meta?.unreadCount || 0;
       })
       .addCase(fetchNotifications.rejected, (state, action) => {
@@ -88,6 +117,21 @@ const communicationSlice = createSlice({
             action.payload.ids!.includes(n.id) ? { ...n, isRead: true, status: 'READ' } : n
           );
           state.unreadCount = Math.max(0, state.unreadCount - action.payload.ids.length);
+        }
+      })
+      .addCase(deleteNotification.fulfilled, (state, action) => {
+        state.notifications = state.notifications.filter(n => n.id !== action.payload);
+      })
+      .addCase(togglePin.fulfilled, (state, action) => {
+        const index = state.notifications.findIndex(n => n.id === action.payload.id);
+        if (index !== -1) {
+          state.notifications[index].isPinned = action.payload.isPinned;
+          // Re-sort notifications: Pinned first, then by date
+          state.notifications.sort((a, b) => {
+            if (a.isPinned && !b.isPinned) return -1;
+            if (!a.isPinned && b.isPinned) return 1;
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          });
         }
       });
   },

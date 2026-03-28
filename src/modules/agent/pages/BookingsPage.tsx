@@ -6,18 +6,44 @@ import {
 } from '@mui/material';
 import { Add, Receipt } from '@mui/icons-material';
 import { useAppDispatch, useAppSelector, A, INR, DATE, fieldSx, labelSx } from '../hooks';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { fetchBookings, doCreateBooking, type Booking } from '../store/agentSlice';
 import { PageHeader, Card, StatCard } from '../components/ui';
 
-const STATUS_COLOR:Record<string,string> = { PENDING:A.amber, CONFIRMED:A.green, CANCELLED:A.red, COMPLETED:A.green };
+const STATUS_COLOR:Record<string,string> = { 
+  PENDING: A.amber, 
+  CONFIRMED: A.green, 
+  CANCELLED: A.red, 
+  COMPLETED: A.green,
+  ON_HOLD: A.amber 
+};
 
 export default function BookingsPage() {
   const dispatch = useAppDispatch();
   const { bookings, loading } = useAppSelector(s=>s.agent);
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ leadId:'', unitId:'', customerName:'', customerPhone:'', customerEmail:'', totalAmount:'', discountAmount:'0' });
   const set=(k:string,v:string)=>setForm(p=>({...p,[k]:v}));
   const busy = !!loading.bookings;
+
+  useEffect(() => {
+    if (location.state?.prefill) {
+      const p = location.state.prefill;
+      setForm({
+        leadId: p.leadId || '',
+        unitId: p.unitId || '',
+        customerName: p.customerName || '',
+        customerPhone: p.customerPhone || '',
+        customerEmail: p.customerEmail || '',
+        totalAmount: '',
+        discountAmount: '0'
+      });
+      setOpen(true);
+      // Clear state so it doesn't reopen on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   useEffect(()=>{ dispatch(fetchBookings({})); },[dispatch]);
 
@@ -36,7 +62,7 @@ export default function BookingsPage() {
       <Grid container spacing={1.5} mb={2.5}>
         {[
           { label:'Confirmed', value:bookings.data.filter(b=>b.status==='CONFIRMED').length, accent:A.green,   icon:<Receipt/> },
-          { label:'Pending',   value:bookings.data.filter(b=>b.status==='PENDING').length,   accent:A.amber,   icon:<Receipt/> },
+          { label:'Pending',   value:bookings.data.filter(b=>['PENDING','ON_HOLD'].includes(b.status)).length, accent:A.amber, icon:<Receipt/> },
           { label:'Revenue',   value:INR(totalRev), accent:A.primary, icon:<Receipt/> },
         ].map(c=><Grid item xs={4} key={c.label}><StatCard {...c} loading={busy} compact sub={undefined}/></Grid>)}
       </Grid>
@@ -83,7 +109,19 @@ export default function BookingsPage() {
         <DialogActions sx={{ px:3, pb:2.5, gap:1 }}>
           <Button onClick={()=>setOpen(false)} sx={{ color:A.textSub, textTransform:'none', fontSize:13 }}>Cancel</Button>
           <Button variant="contained" disabled={!form.leadId||!form.unitId||!form.customerName||!form.totalAmount}
-            onClick={()=>{ dispatch(doCreateBooking({ ...form, totalAmount:+form.totalAmount, discountAmount:+form.discountAmount })); setOpen(false); }}
+            onClick={()=>{
+              const total = +form.totalAmount;
+              const discount = +form.discountAmount;
+              dispatch(doCreateBooking({ 
+                ...form, 
+                totalAmount: total, 
+                discountAmount: discount,
+                finalAmount: total - discount 
+              })).then(() => {
+                dispatch(fetchBookings({}));
+              }); 
+              setOpen(false); 
+            }}
             sx={{ bgcolor:A.primary, textTransform:'none', fontWeight:600, borderRadius:'8px', fontSize:13 }}>
             Create Booking
           </Button>

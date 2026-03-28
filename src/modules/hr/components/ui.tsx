@@ -219,3 +219,14 @@ export function PrimaryBtn({ children, onClick, startIcon, size = 'small', disab
     </Box>
   );
 }
+
+export function KVRow({ label, value, bold }: { label: string; value: React.ReactNode; bold?: boolean }) {
+  return (
+    <Box display="flex" justifyContent="space-between" mb={1.5}>
+      <Typography sx={{ color: H.textSub, fontSize: 13, fontWeight: 500 }}>{label}</Typography>
+      <Typography sx={{ color: H.text, fontSize: 13, fontWeight: bold ? 700 : 500, textAlign: 'right' }}>
+        {value || '—'}
+      </Typography>
+    </Box>
+  );
+}

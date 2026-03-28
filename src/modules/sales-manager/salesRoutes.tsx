@@ -21,6 +21,7 @@ const TerritoriesPage     = lazy(()=>import('./pages/TerritoriesPage'));
 const TeamManagementPage  = lazy(()=>import('./pages/TeamManagementPage'));
 const LeaderboardPage     = lazy(()=>import('./pages/LeaderboardPage'));
 const SalesReportsPage    = lazy(()=>import('./pages/SalesReportsPage'));
+const ProfilePage         = lazy(()=>import('./pages/ProfilePage'));
 
 const Spin = ()=>(
   <Box display="flex" alignItems="center" justifyContent="center" minHeight="60vh">
@@ -44,6 +45,7 @@ export default function SalesRoutes() {
         <Route path="team"        element={<TeamManagementPage/>}/>
         <Route path="leaderboard" element={<LeaderboardPage/>}/>
         <Route path="reports"     element={<SalesReportsPage/>}/>
+        <Route path="profile"     element={<ProfilePage/>}/>
         <Route path="*"           element={<Navigate to="dashboard" replace/>}/>
       </Routes>
     </Suspense>

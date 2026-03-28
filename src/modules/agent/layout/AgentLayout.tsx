@@ -5,14 +5,16 @@ import {
   Box, Drawer, List, ListItemButton, ListItemIcon, ListItemText,
   Typography, Avatar, Divider, Tooltip, IconButton, Badge,
   BottomNavigation, BottomNavigationAction, useMediaQuery, useTheme,
+  Menu, MenuItem, AppBar, Toolbar,
 } from '@mui/material';
 import {
   Dashboard, ContactPhone, EventNote, Map, Receipt,
   Assignment, AccessTime, BarChart, LocationOn, Person,
-  MenuOpen, Menu as MenuIcon, NotificationsNone, Logout, LayersOutlined,
+  MenuOpen, Menu as MenuIcon, NotificationsNone, Logout, LayersOutlined, Settings,
 } from '@mui/icons-material';
 import { A } from '../hooks';
 import { useAppSelector } from '../hooks';
+import NotificationBell from '../../../components/NotificationBell';
 
 const W = 240, WC = 58;
 
@@ -41,15 +43,29 @@ const BOTTOM_NAV = [
 
 export default function AgentLayout({ children }: { children?: React.ReactNode }) {
   const [collapsed, setC] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
   const nav = useNavigate();
   const loc = useLocation();
-  const notifications = useAppSelector(s => s.agent.notifications);
   const profile       = useAppSelector(s => s.agent.profile);
   const theme         = useTheme();
   const isMobile      = useMediaQuery(theme.breakpoints.down('md'));
 
   const dw  = collapsed ? WC : W;
   const on  = (path: string) => loc.pathname.startsWith(path);
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    handleMenuClose();
+    localStorage.removeItem('token');
+    nav('/login');
+  };
 
   // Mobile: bottom nav
   if (isMobile) {
@@ -69,13 +85,13 @@ export default function AgentLayout({ children }: { children?: React.ReactNode }
             <Typography sx={{ color:A.text, fontWeight:700, fontSize:14 }}>Realesso Agent</Typography>
           </Box>
           <Box display="flex" alignItems="center" gap={0.75}>
-            <Badge badgeContent={notifications.filter((n:any)=>n.status==='UNREAD').length} color="error">
-              <IconButton size="small" onClick={()=>nav('/agent/dashboard')} sx={{ color:A.muted }}>
-                <NotificationsNone sx={{ fontSize:20 }}/>
-              </IconButton>
-            </Badge>
-            <Avatar sx={{ width:28, height:28, bgcolor:A.primary, fontSize:11, fontWeight:700 }}>
-              {(profile?.name??'A').charAt(0)}
+            <NotificationBell />
+            <Avatar
+              src={profile?.avatarUrl ? `${profile.avatarUrl}${profile.avatarUrl.includes('?') ? '&' : '?' }t=${profile.updatedAt ? new Date(profile.updatedAt).getTime() : '0'}` : undefined}
+              onClick={handleMenuOpen}
+              sx={{ width: 28, height: 28, bgcolor: A.primary, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+            >
+              {(profile?.name ?? 'A').charAt(0)}
             </Avatar>
           </Box>
         </Box>
@@ -152,30 +168,84 @@ export default function AgentLayout({ children }: { children?: React.ReactNode }
 
         <Divider sx={{ borderColor:A.border }}/>
         <Box sx={{ display:'flex', alignItems:'center', gap:1.25, px:collapsed?1:2, py:1.5, flexShrink:0 }}>
-          <Avatar sx={{ width:28, height:28, bgcolor:A.primary, fontSize:11, fontWeight:700, flexShrink:0 }}>
-            {(profile?.name??'A').charAt(0)}
+          <Avatar
+            src={profile?.avatarUrl ? `${profile.avatarUrl}${profile.avatarUrl.includes('?') ? '&' : '?' }t=${profile.updatedAt ? new Date(profile.updatedAt).getTime() : '0'}` : undefined}
+            onClick={handleMenuOpen}
+            sx={{ width: 28, height: 28, bgcolor: A.primary, fontSize: 11, fontWeight: 700, flexShrink: 0, cursor: 'pointer' }}
+          >
+            {(profile?.name ?? 'A').charAt(0)}
           </Avatar>
           {!collapsed && <Box flex={1} minWidth={0}>
             <Typography sx={{ color:A.text, fontSize:12, fontWeight:600 }} noWrap>{profile?.name??'Agent'}</Typography>
-            <Typography sx={{ color:A.textSub, fontSize:10.5 }} noWrap>Field Sales Agent</Typography>
+            <Typography sx={{ color:A.textSub, fontSize:10.5 }} noWrap>{profile?.role ?? 'Agent'}</Typography>
           </Box>}
-          {!collapsed && <IconButton size="small" sx={{ color:A.muted, '&:hover':{color:A.red}, flexShrink:0 }}><Logout sx={{fontSize:14}}/></IconButton>}
+          {!collapsed && <IconButton size="small" onClick={handleLogout} sx={{ color:A.muted, '&:hover':{color:A.red}, flexShrink:0 }}><Logout sx={{fontSize:14}}/></IconButton>}
         </Box>
       </Drawer>
 
       <Box component="main" sx={{ flex:1, minWidth:0, display:'flex', flexDirection:'column' }}>
-        <Box sx={{ display:'flex', alignItems:'center', justifyContent:'flex-end', gap:1.5, px:3, height:60, flexShrink:0, borderBottom:`1px solid ${A.border}`, bgcolor:A.surface }}>
-          <Badge badgeContent={notifications.filter((n:any)=>n.status==='UNREAD').length} color="error">
-            <IconButton size="small" sx={{ color:A.muted }}><NotificationsNone sx={{fontSize:18}}/></IconButton>
-          </Badge>
-          <Avatar sx={{ width:28, height:28, bgcolor:A.primary, fontSize:10, fontWeight:700 }}>
-            {(profile?.name??'A').charAt(0)}
-          </Avatar>
-        </Box>
+        <AppBar 
+          position="sticky" 
+          color="inherit" 
+          elevation={0}
+          sx={{ 
+            bgcolor: A.surface, 
+            borderBottom: `1px solid ${A.border}`,
+            zIndex: (theme) => theme.zIndex.drawer + 1
+          }}
+        >
+          <Toolbar sx={{ justifyContent: 'flex-end', gap: 1.5, minHeight: '60px !important' }}>
+            <NotificationBell />
+            <Avatar
+              src={profile?.avatarUrl ? `${profile.avatarUrl}${profile.avatarUrl.includes('?') ? '&' : '?' }t=${profile.updatedAt ? new Date(profile.updatedAt).getTime() : '0'}` : undefined}
+              onClick={handleMenuOpen}
+              sx={{ width: 32, height: 32, bgcolor: A.primary, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: '2px solid #fff', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
+            >
+              {(profile?.name ?? 'A').charAt(0)}
+            </Avatar>
+          </Toolbar>
+        </AppBar>
         <Box sx={{ flex:1, overflowY:'auto', p:{xs:2,md:3} }}>
           {children || <Outlet />}
         </Box>
       </Box>
+
+      {/* Profile Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleMenuClose}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        PaperProps={{
+          sx: {
+            bgcolor: A.surface,
+            border: `1px solid ${A.border}`,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+            mt: 1,
+            minWidth: 160,
+            '& .MuiMenuItem-root': {
+              fontSize: 13,
+              color: A.textSub,
+              gap: 1.5,
+              py: 1,
+              '&:hover': { bgcolor: `${A.primary}10`, color: A.text },
+              '& .MuiSvgIcon-root': { fontSize: 18, color: A.muted }
+            }
+          }
+        }}
+      >
+        <MenuItem onClick={() => { handleMenuClose(); nav('/agent/profile'); }}>
+          <Person /> My Profile
+        </MenuItem>
+        <MenuItem onClick={() => { handleMenuClose(); nav('/agent/settings'); }}>
+          <Settings /> Settings
+        </MenuItem>
+        <Divider sx={{ borderColor: A.border }} />
+        <MenuItem onClick={handleLogout} sx={{ color: `${A.red} !important` }}>
+          <Logout sx={{ color: `${A.red} !important` }} /> Logout
+        </MenuItem>
+      </Menu>
     </Box>
   );
 }

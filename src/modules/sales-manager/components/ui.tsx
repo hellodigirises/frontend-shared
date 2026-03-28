@@ -115,3 +115,14 @@ export function DataTable<T extends {id:string}>({ columns, rows, loading, empty
 export function Loader() {
   return <Box display="flex" alignItems="center" justifyContent="center" minHeight={300}><CircularProgress size={26} sx={{ color:S.primary }}/></Box>;
 }
+
+export function KVRow({ label, value, bold }: { label: string; value: React.ReactNode; bold?: boolean }) {
+  return (
+    <Box display="flex" justifyContent="space-between" mb={1.5}>
+      <Typography sx={{ color: S.textSub, fontSize: 13, fontWeight: 500 }}>{label}</Typography>
+      <Typography sx={{ color: S.text, fontSize: 13, fontWeight: bold ? 700 : 500, textAlign: 'right' }}>
+        {value || '—'}
+      </Typography>
+    </Box>
+  );
+}

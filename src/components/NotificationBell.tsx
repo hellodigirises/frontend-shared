@@ -1,19 +1,24 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
-  IconButton, Badge, Menu, MenuItem, Typography, Box, 
-  Divider, List, ListItem, ListItemText, ListItemAvatar, 
-  Avatar, Button, CircularProgress 
+  IconButton, Badge, Popover, MenuItem, Typography, Box, 
+  Divider, List, ListItem, ListItemButton, ListItemText, ListItemAvatar, 
+  Avatar, Button, CircularProgress, Dialog, DialogTitle,
+  DialogContent, DialogActions, Tooltip
 } from '@mui/material';
-import { NotificationsOutlined, NotificationsActiveOutlined, Circle } from '@mui/icons-material';
+import { NotificationsOutlined, NotificationsActiveOutlined, Circle, Close, PushPinOutlined, DeleteOutlineOutlined } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../redux/store';
-import { fetchNotifications, markAsRead, Notification } from '../redux/slices/communicationSlice';
+import { fetchNotifications, markAsRead, deleteNotification, togglePin, Notification } from '../redux/slices/communicationSlice';
 import { formatDistanceToNow } from 'date-fns';
 
 const NotificationBell: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const loc = useLocation();
   const { notifications, unreadCount, loading } = useSelector((state: RootState) => state.communication);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedNotif, setSelectedNotif] = useState<Notification | null>(null);
 
   useEffect(() => {
     dispatch(fetchNotifications());
@@ -36,15 +41,33 @@ const NotificationBell: React.FC = () => {
     dispatch(markAsRead({ all: true }));
   };
 
+  const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    dispatch(deleteNotification(id));
+  };
+
+  const handleTogglePin = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    dispatch(togglePin(id));
+  };
+
+  const handleViewAll = () => {
+    const path = loc.pathname.startsWith('/agent') ? '/agent/notifications' : '/notifications';
+    navigate(path);
+    handleClose();
+  };
+
   const handleNotificationClick = (n: Notification) => {
     if (!n.isRead) {
       dispatch(markAsRead({ ids: [n.id] }));
     }
-    // Deep link if actionUrl exists
+    
     if (n.actionUrl) {
-        window.location.href = n.actionUrl;
+        navigate(n.actionUrl);
+        handleClose();
+    } else {
+        setSelectedNotif(n);
     }
-    handleClose();
   };
 
   const open = Boolean(anchorEl);
@@ -55,7 +78,7 @@ const NotificationBell: React.FC = () => {
         onClick={handleOpen}
         sx={{ 
             bgcolor: open ? 'rgba(99, 102, 241, 0.1)' : '#f1f5f9',
-            color: open ? 'primary.main' : 'inherit'
+            color: open ? 'primary.main' : 'inherit',
         }}
       >
         <Badge badgeContent={unreadCount} color="error" overlap="circular">
@@ -63,26 +86,33 @@ const NotificationBell: React.FC = () => {
         </Badge>
       </IconButton>
 
-      <Menu
+      <Popover
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
         PaperProps={{
           sx: {
             width: 360,
-            maxHeight: 480,
+            maxHeight: 480, // Dynamic height up to 480px
             borderRadius: 3,
             mt: 1.5,
             boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
-            overflow: 'hidden',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            overflow: 'hidden',
+            pointerEvents: 'auto'
           }
         }}
-        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
       >
-        <Box sx={{ p: 2, pb: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ p: 2, pb: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: 'background.paper', flexShrink: 0 }}>
           <Typography variant="subtitle1" fontWeight={700}>
             Notifications
           </Typography>
@@ -94,7 +124,25 @@ const NotificationBell: React.FC = () => {
         </Box>
         <Divider />
         
-        <Box sx={{ flexGrow: 1, overflowY: 'auto', minHeight: 100 }}>
+        <Box sx={{ 
+            flexGrow: 1, 
+            overflowY: 'auto', // Back to auto but with forced scrollbar styles
+            minHeight: 100,
+            '&::-webkit-scrollbar': {
+                width: '6px',
+                display: 'block' // Ensure it's there
+            },
+            '&::-webkit-scrollbar-track': {
+                background: 'transparent',
+            },
+            '&::-webkit-scrollbar-thumb': {
+                background: 'rgba(0,0,0,0.1)',
+                borderRadius: '10px',
+            },
+            '&:hover::-webkit-scrollbar-thumb': {
+                background: 'rgba(0,0,0,0.3)', // Slightly darker for visibility
+            }
+        }}>
           {loading && notifications.length === 0 ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
               <CircularProgress size={24} />
@@ -106,16 +154,18 @@ const NotificationBell: React.FC = () => {
               </Typography>
             </Box>
           ) : (
-            <List disablePadding>
-              {notifications.slice(0, 10).map((n) => (
+            <List disablePadding sx={{ width: '100%' }}>
+              {notifications.map((n) => (
                 <React.Fragment key={n.id}>
-                  <ListItem 
-                    button 
+                  <ListItemButton 
                     onClick={() => handleNotificationClick(n)}
                     sx={{ 
                       px: 2, py: 1.5,
                       bgcolor: !n.isRead ? 'rgba(99, 102, 241, 0.04)' : 'transparent',
-                      '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.02)' }
+                      '&:hover': { 
+                        bgcolor: 'rgba(0, 0, 0, 0.02)',
+                        '& .actions': { display: 'flex' }
+                      }
                     }}
                   >
                     <ListItemAvatar sx={{ minWidth: 48 }}>
@@ -135,11 +185,32 @@ const NotificationBell: React.FC = () => {
                             {n.title}
                           </Typography>
                           {!n.isRead && <Circle sx={{ fontSize: 8, color: 'primary.main', mt: 0.5 }} />}
+                          <Box className="actions" sx={{ display: 'none', ml: 1 }}>
+                             <Tooltip title={n.isPinned ? "Unpin" : "Pin"}>
+                               <IconButton size="small" onClick={(e) => handleTogglePin(e, n.id)} sx={{ p: 0.5, color: n.isPinned ? 'primary.main' : 'inherit' }}>
+                                 <PushPinOutlined sx={{ fontSize: 16 }} />
+                               </IconButton>
+                             </Tooltip>
+                             <IconButton size="small" onClick={(e) => handleDelete(e, n.id)} sx={{ p: 0.5, color: 'error.main' }}>
+                               <DeleteOutlineOutlined sx={{ fontSize: 16 }} />
+                             </IconButton>
+                          </Box>
                         </Box>
                       }
                       secondary={
                         <Box>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, lineHeight: 1.2 }}>
+                          <Typography 
+                            variant="caption" 
+                            color="text.secondary" 
+                            sx={{ 
+                                display: '-webkit-box', 
+                                WebkitLineClamp: 2, 
+                                WebkitBoxOrient: 'vertical', 
+                                overflow: 'hidden',
+                                mb: 0.5, 
+                                lineHeight: 1.2 
+                            }}
+                          >
                             {n.message}
                           </Typography>
                           <Typography variant="caption" color="text.disabled">
@@ -148,7 +219,7 @@ const NotificationBell: React.FC = () => {
                         </Box>
                       }
                     />
-                  </ListItem>
+                  </ListItemButton>
                   <Divider component="li" />
                 </React.Fragment>
               ))}
@@ -157,12 +228,54 @@ const NotificationBell: React.FC = () => {
         </Box>
         
         <Divider />
-        <Box sx={{ p: 1, textAlign: 'center' }}>
-          <Button fullWidth size="small" sx={{ textTransform: 'none', color: 'text.secondary' }}>
+        <Box sx={{ p: 1, textAlign: 'center', bgcolor: 'background.paper' }}>
+          <Button fullWidth size="small" onClick={handleViewAll} sx={{ textTransform: 'none', color: 'text.secondary' }}>
             View all notifications
           </Button>
         </Box>
-      </Menu>
+      </Popover>
+
+      <Dialog 
+        open={Boolean(selectedNotif)} 
+        onClose={() => setSelectedNotif(null)}
+        PaperProps={{ sx: { borderRadius: 3, maxWidth: 450 } }}
+      >
+        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="h6" fontWeight={700}>Notification Detail</Typography>
+          <IconButton onClick={() => setSelectedNotif(null)} size="small">
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 3 }}>
+          <Typography variant="subtitle1" fontWeight={700} gutterBottom color="primary.main">
+            {selectedNotif?.title}
+          </Typography>
+          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', color: 'text.secondary', lineHeight: 1.6 }}>
+            {selectedNotif?.message}
+          </Typography>
+          <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 3 }}>
+            Received: {selectedNotif && formatDistanceToNow(new Date(selectedNotif.createdAt), { addSuffix: true })}
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setSelectedNotif(null)} variant="outlined" sx={{ borderRadius: 2, textTransform: 'none' }}>
+            Close
+          </Button>
+          {selectedNotif?.actionUrl && (
+            <Button 
+                variant="contained" 
+                onClick={() => {
+                    if (selectedNotif.actionUrl) navigate(selectedNotif.actionUrl);
+                    setSelectedNotif(null);
+                    handleClose();
+                }}
+                sx={{ borderRadius: 2, textTransform: 'none' }}
+            >
+              Take Action
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

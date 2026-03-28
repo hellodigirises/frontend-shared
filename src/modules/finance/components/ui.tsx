@@ -145,3 +145,14 @@ export function AmountCell({ value, color }:{ value:number; color?:string }) {
     {new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(value)}
   </Typography>;
 }
+
+export function KVRow({ label, value, bold }: { label: string; value: React.ReactNode; bold?: boolean }) {
+  return (
+    <Box display="flex" justifyContent="space-between" mb={1.5}>
+      <Typography sx={{ color: F.textSub, fontSize: 13, fontWeight: 500 }}>{label}</Typography>
+      <Typography sx={{ color: F.text, fontSize: 13, fontWeight: bold ? 700 : 500, textAlign: 'right' }}>
+        {value || '—'}
+      </Typography>
+    </Box>
+  );
+}

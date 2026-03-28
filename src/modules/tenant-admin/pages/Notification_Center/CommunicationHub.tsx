@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import {
   Box, Typography, Stack, Button, Tabs, Tab, Grid,
   Paper, Chip, Avatar, Divider, CircularProgress,
-  Badge, IconButton, Tooltip
+  Badge, IconButton, Tooltip, Snackbar, Alert
 } from '@mui/material';
 import {
   NotificationsOutlined, ChatOutlined, AnnouncementOutlined,
@@ -145,6 +145,9 @@ const CommunicationHub: React.FC = () => {
   const [escalations, setEscalations] = useState<EscalationRecord[]>([]);
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sb, setSb] = useState<{ open: boolean; msg: string; sev: 'success' | 'error' }>({ open: false, msg: '', sev: 'success' });
+
+  const showMsg = (msg: string, sev: 'success' | 'error' = 'success') => setSb({ open: true, msg, sev });
 
   const unreadNotifs = (notifications || []).filter(n => !n.isRead).length;
   const unreadMsgs = (conversations || []).reduce((s, c) => s + (c?.unreadCount || 0), 0);
@@ -153,21 +156,21 @@ const CommunicationHub: React.FC = () => {
     setLoading(true);
     try {
       const [nRes, cRes, aRes, actRes, logRes, escRes, pRes] = await Promise.all([
-        api.get('/notifications'),
-        api.get('/conversations'),
-        api.get('/announcements'),
-        api.get('/activity-feed'),
-        api.get('/communication-logs'),
-        api.get('/escalations'),
-        api.get('/users/notification-settings'),
+        api.get('/communications/notifications'),
+        api.get('/communications/conversations'),
+        api.get('/communications/announcements'),
+        api.get('/communications/activity-feed'),
+        api.get('/communications/communication-logs'),
+        api.get('/communications/escalations'),
+        api.get('/communications/users/notification-settings'),
       ]);
-      setNotifications(nRes.data?.data ?? nRes.data ?? []);
-      setConversations(cRes.data?.data ?? cRes.data ?? []);
-      setAnnouncements(aRes.data?.data ?? aRes.data ?? []);
-      setActivities(actRes.data?.data ?? actRes.data ?? []);
-      setCommLogs(logRes.data?.data ?? logRes.data ?? []);
-      setEscalations(escRes.data?.data ?? escRes.data ?? []);
-      setPreferences(pRes.data ?? null);
+      setNotifications(nRes.data?.data || nRes.data || []);
+      setConversations(cRes.data?.data || cRes.data || []);
+      setAnnouncements(aRes.data?.data || aRes.data || []);
+      setActivities(actRes.data?.data || actRes.data || []);
+      setCommLogs(logRes.data?.data || logRes.data || []);
+      setEscalations(escRes.data?.data || escRes.data || []);
+      setPreferences(pRes.data?.data || pRes.data || null);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -176,21 +179,21 @@ const CommunicationHub: React.FC = () => {
 
   const handleMarkRead = async (id: string) => {
     try {
-      await api.post('/notifications/read', { ids: [id] });
+      await api.put(`/communications/notifications/${id}/read`);
       setNotifications(n => n.map(x => x.id === id ? { ...x, isRead: true } : x));
     } catch (e) { console.error(e); }
   };
 
   const handleMarkAllRead = async () => {
     try {
-      await api.post('/notifications/read', { all: true });
+      await api.put('/communications/notifications/mark-all-read');
       setNotifications(n => n.map(x => ({ ...x, isRead: true })));
     } catch (e) { console.error(e); }
   };
 
   const handleDeleteNotif = async (id: string) => {
     try {
-      await api.delete(`/notifications/${id}`);
+      await api.delete(`/communications/notifications/${id}`);
       setNotifications(n => n.filter(x => x.id !== id));
     } catch (e) { console.error(e); }
   };
@@ -198,9 +201,38 @@ const CommunicationHub: React.FC = () => {
   const handlePinNotif = async (id: string) => {
     try {
       const notif = notifications.find(x => x.id === id);
-      await api.put(`/notifications/${id}`, { isPinned: !notif?.isPinned });
+      await api.patch(`/communications/notifications/${id}/pin`);
       setNotifications(n => n.map(x => x.id === id ? { ...x, isPinned: !x.isPinned } : x));
-    } catch (e) { console.error(e); }
+      showMsg(`Notification ${!notif?.isPinned ? 'pinned' : 'unpinned'}`);
+    } catch (e) { console.error(e); showMsg('Failed to update notification', 'error'); }
+  };
+
+  const handleDeleteAnnouncement = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this announcement?')) return;
+    try {
+      await api.delete(`/communications/announcements/${id}`);
+      setAnnouncements(prev => prev.filter(a => a.id !== id));
+      showMsg('Announcement deleted successfully');
+    } catch (e) { console.error(e); showMsg('Failed to delete announcement', 'error'); }
+  };
+
+  const handleTogglePinAnnouncement = async (id: string) => {
+    try {
+      await api.patch(`/communications/announcements/${id}/pin`);
+      setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, pinned: !a.pinned } : a));
+      showMsg('Announcement pin status updated');
+    } catch (e) { console.error(e); showMsg('Failed to toggle pin', 'error'); }
+  };
+
+  const handleSaveSettings = async (newPrefs: NotificationPreferences) => {
+    try {
+      await api.put('/communications/users/notification-settings', newPrefs);
+      setPreferences(newPrefs);
+      showMsg('Notification preferences saved');
+    } catch (e) {
+      console.error(e);
+      showMsg('Failed to save preferences', 'error');
+    }
   };
 
   const TABS = [
@@ -291,6 +323,8 @@ const CommunicationHub: React.FC = () => {
           announcements={announcements}
           currentRole={currentRole}
           onRefresh={fetchAll}
+          onDelete={handleDeleteAnnouncement}
+          onPin={handleTogglePinAnnouncement}
         />
       )}
 
@@ -323,9 +357,15 @@ const CommunicationHub: React.FC = () => {
             push: { enabled: false, quietHoursFrom: '22:00', quietHoursTo: '08:00' },
             digest: 'REALTIME'
           } as any}
-          onSave={setPreferences}
+          onSave={handleSaveSettings}
         />
       )}
+
+      <Snackbar open={sb.open} autoHideDuration={4000} onClose={() => setSb(s => ({ ...s, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+        <Alert onClose={() => setSb(s => ({ ...s, open: false }))} severity={sb.sev} variant="filled" sx={{ width: '100%', borderRadius: 2 }}>
+          {sb.msg}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

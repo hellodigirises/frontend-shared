@@ -87,6 +87,7 @@ export interface Lead {
   ownerAgent?: Agent;
   activities?: ActivityLog[];
   followUps?: FollowUp[];
+  siteVisits?: any[];
   documents?: LeadDocument[];
 }
 

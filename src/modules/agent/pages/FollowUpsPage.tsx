@@ -77,7 +77,7 @@ export default function FollowUpsPage() {
   const { followUps, loading } = useAppSelector(s=>s.agent);
   const [open,       setOpen]      = useState(false);
   const [todayOnly,  setTodayOnly] = useState(false);
-  const [showDone,   setShowDone]  = useState(false);
+  const [showDone,   setShowDone]  = useState(true);
   const busy = !!loading.followUps;
 
   useEffect(()=>{

@@ -412,7 +412,7 @@ const LeadDetailPanel: React.FC<Props> = ({ leadId, onClose, onUpdate, onEdit })
                     {initials(lead.ownerAgent?.name ?? '?')}
                   </Avatar>
                   <Typography variant="body2" fontWeight={800} sx={{ textDecoration: 'underline', color: 'primary.main' }}>
-                    {lead.ownerAgent?.name ?? 'Unassigned'}
+                    {lead.ownerAgent?.name ?? (lead as any).assignedTo?.name ?? 'Unassigned'}
                   </Typography>
                 </Stack>
               )
