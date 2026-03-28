@@ -1,32 +1,16 @@
 // src/modules/superadmin/api/superadmin.api.ts
-import axios from 'axios';
+import baseApi from '../../../api/axios';
 
-export const api = axios.create({
-  // Matches your app.ts mount: /api/v1/superadmin
-  baseURL : `${import.meta.env.VITE_API_URL ?? 'http://localhost:5000'}/api/v1/superadmin`,
-  headers : { 'Content-Type': 'application/json' },
-  timeout : 30_000,
-});
+/**
+ * SuperAdmin API wrapper that reuses the central axios instance 
+ * while maintaining the /superadmin mount point.
+ */
+export const api = {
+  get: (url: string, config?: any) => baseApi.get(`/superadmin${url}`, config),
+  post: (url: string, data?: any, config?: any) => baseApi.post(`/superadmin${url}`, data, config),
+  put: (url: string, data?: any, config?: any) => baseApi.put(`/superadmin${url}`, data, config),
+  delete: (url: string, config?: any) => baseApi.delete(`/superadmin${url}`, config),
+  patch: (url: string, data?: any, config?: any) => baseApi.patch(`/superadmin${url}`, data, config),
+};
 
-// Attach JWT on every request
-api.interceptors.request.use(cfg => {
-  const token = localStorage.getItem('sa_token') || localStorage.getItem('token');
-  if (token) {
-    cfg.headers.Authorization = `Bearer ${token}`;
-  }
-  return cfg;
-});
-
-// Redirect to login on 401
-api.interceptors.response.use(
-  res => res,
-  err => {
-    if (err.response?.status === 401) {
-      localStorage.removeItem('sa_token');
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-    }
-    return Promise.reject(err);
-  },
-);
+export default api;

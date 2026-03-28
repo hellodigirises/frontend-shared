@@ -11,7 +11,7 @@ export const api = axios.create({
 
 // Add token and tenant ID to headers if logged in
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("sa_token") || localStorage.getItem("token");
   const user = localStorage.getItem("user");
   
   if (token && config.headers) {
