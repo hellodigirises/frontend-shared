@@ -451,6 +451,19 @@
         <div class="form-head-sub">You're signing up for <span id="chosen-plan-label" class="text-emerald">Growth Plan</span></div>
       </div>
       <div class="form-body">
+        <div class="field" style="display:flex; flex-direction:column; align-items:center; gap:12px; margin-bottom:24px;">
+          <div style="width:80px; height:80px; border-radius:12px; background:var(--surface-2); border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; overflow:hidden;">
+            <img id="logo-preview-signup" src="" style="width:100%; height:100%; object-fit:cover; display:none;" />
+            <span id="logo-placeholder-signup" style="font-size:32px;">🏢</span>
+          </div>
+          <button class="btn btn-ghost" style="padding:6px 12px; font-size:11px;" onclick="document.getElementById('f-logo-file').click()" id="btn-upload-signup">
+            <span id="txt-upload-signup">Upload Company Logo</span>
+            <span id="spn-upload-signup" class="loading-spinner hidden"></span>
+          </button>
+          <input type="file" id="f-logo-file" accept="image/*" style="display:none;" onchange="uploadLogoSignup(this)" />
+          <input type="hidden" id="f-logo-url" />
+        </div>
+
         <div class="field field-row">
           <div>
             <label>Owner / MD Full Name *</label>
@@ -947,12 +960,51 @@
 const state = {
   plan: 'growth',
   billing: 'yearly',
-  formData: {},
+  formData: { logoUrl: '' },
   otpTimer: null,
   subdomainTimeout: null,
   couponApplied: false,
   couponDiscount: 0,
 };
+
+async function uploadLogoSignup(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const btn = document.getElementById('btn-upload-signup');
+  const txt = document.getElementById('txt-upload-signup');
+  const spn = document.getElementById('spn-upload-signup');
+  
+  btn.classList.add('btn-disabled');
+  txt.classList.add('hidden');
+  spn.classList.remove('hidden');
+
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('logo', 'true');
+
+  try {
+    const res = await fetch('/api/v1/upload', {
+      method: 'POST',
+      body: fd
+    });
+    const resData = await res.json();
+    if (resData.success) {
+      const url = resData.data.url;
+      document.getElementById('f-logo-url').value = url;
+      document.getElementById('logo-preview-signup').src = url;
+      document.getElementById('logo-preview-signup').style.display = 'block';
+      document.getElementById('logo-placeholder-signup').style.display = 'none';
+      state.formData.logoUrl = url;
+    }
+  } catch (err) {
+    console.error('Upload failed', err);
+  } finally {
+    btn.classList.remove('btn-disabled');
+    txt.classList.remove('hidden');
+    spn.classList.add('hidden');
+  }
+}
 
 const PLANS = {
   starter:    { name:'Starter',    icon:'🌱', monthly:4999,   yearly:49990  },
@@ -1060,7 +1112,7 @@ async function checkSubdomainAvailability(slug) {
       body: JSON.stringify({ subdomain: slug })
     });
     const resData = await res.json();
-    const ok = resData?.data?.available ?? false;
+    const ok = resData.data.available;
     document.getElementById('subdomain-ok').classList.toggle('hidden', !ok);
     document.getElementById('subdomain-err').classList.toggle('hidden', ok);
     document.getElementById('subdomain-preview').textContent = slug;
@@ -1125,7 +1177,7 @@ function signupStep0Next() {
   if (!terms) { showErr('terms', 'You must accept the Terms of Service'); ok = false; }
   
   if (ok) {
-    state.formData = { ownerName, companyName, email, phone, password };
+    state.formData = { ...state.formData, ownerName, companyName, email, phone, password };
     gotoSignupStep(1);
   }
 }
