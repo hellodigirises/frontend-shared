@@ -453,7 +453,7 @@
       <div class="form-body">
         <div class="field" style="display:flex; flex-direction:column; align-items:center; gap:12px; margin-bottom:24px;">
           <div style="width:80px; height:80px; border-radius:12px; background:var(--surface-2); border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; overflow:hidden;">
-            <img id="logo-preview-signup" src="" style="width:100%; height:100%; object-fit:cover; display:none;" />
+            <img id="logo-preview-signup" src="" style="width:100%; height:100%; object-fit:contain; display:none; background-color:transparent;" />
             <span id="logo-placeholder-signup" style="font-size:32px;">🏢</span>
           </div>
           <button class="btn btn-ghost" style="padding:6px 12px; font-size:11px;" onclick="document.getElementById('f-logo-file').click()" id="btn-upload-signup">
@@ -478,7 +478,7 @@
         </div>
         <div class="field field-row">
           <div>
-            <label>Work Email *</label>
+            <label>Work Email * (Will be used for Admin Login)</label>
             <input class="input" id="f-email" type="email" placeholder="owner@company.com" oninput="clearErr('f-email')" />
             <div class="error-msg hidden" id="err-email"></div>
           </div>
@@ -855,7 +855,7 @@
             <div style="font-weight:700;margin-bottom:8px;">Drag & drop or click to upload</div>
             <div class="upload-hint">PNG or SVG recommended · Min 200×200px · Max 2MB</div>
           </div>
-          <img id="logo-img-preview" src="" style="max-height:100px;display:none;border-radius:8px;" />
+          <img id="logo-img-preview" src="" style="max-height:100px; max-width:100%; display:none; border-radius:8px; object-fit:contain; background-color:transparent;" />
         </div>
         <input type="file" id="logo-file" accept="image/*" style="display:none;" onchange="previewLogo(this)" />
         <div class="alert-bar info" style="margin-top:16px;">💡 A transparent PNG logo works best on both light and dark backgrounds</div>
@@ -984,7 +984,7 @@ async function uploadLogoSignup(input) {
   fd.append('logo', 'true');
 
   try {
-    const res = await fetch('/api/v1/upload', {
+    const res = await fetch('/api/v1/upload/onboarding', {
       method: 'POST',
       body: fd
     });
@@ -1162,7 +1162,7 @@ function signupStep0Next() {
   let ok = true;
   const ownerName = document.getElementById('f-owner').value.trim();
   const companyName = document.getElementById('f-company').value.trim();
-  const email = document.getElementById('f-email').value.trim();
+  const email = document.getElementById('f-email').value.trim().toLowerCase();
   const phone = document.getElementById('f-phone').value.trim();
   const password = document.getElementById('f-password').value;
   const conf = document.getElementById('f-confirm').value;
@@ -1177,7 +1177,20 @@ function signupStep0Next() {
   if (!terms) { showErr('terms', 'You must accept the Terms of Service'); ok = false; }
   
   if (ok) {
-    state.formData = { ...state.formData, ownerName, companyName, email, phone, password };
+    const wiz0 = document.getElementById('wiz-0');
+    const inputs = wiz0.querySelectorAll('input');
+    const textarea = wiz0.querySelector('textarea');
+    
+    state.formData = { 
+      ...state.formData, 
+      ownerName, companyName, email, phone, password,
+      address: textarea.value,
+      gstNumber: inputs[2].value,
+      reraNumber: inputs[3].value,
+      city: inputs[4].value,
+      state: inputs[5].value,
+      pincode: inputs[6].value,
+    };
     gotoSignupStep(1);
   }
 }
