@@ -1,1400 +1,1059 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Realesso CRM — Start Free</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Realesso – Get Started</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <style>
-  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-  :root {
-    --obsidian: #050a0e;
-    --surface-1: #0b1217;
-    --surface-2: #121b22;
-    --surface-3: #1a2632;
-    --border: #1e2d3d;
-    --border-light: #263545;
-    --emerald: #00e676;
-    --emerald-dim: #00c45f;
-    --emerald-glow: rgba(0,230,118,.15);
-    --amber: #ffb347;
-    --amber-dim: #e69920;
-    --sky: #38bdf8;
-    --violet: #a78bfa;
-    --text-1: #f0f6fc;
-    --text-2: #8b9eb0;
-    --text-3: #4a5e6e;
-    --font-serif: 'Instrument Serif', Georgia, serif;
-    --font-sans: 'DM Sans', system-ui, sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
-    --radius: 14px;
-    --radius-sm: 8px;
-    --shadow-glow: 0 0 60px rgba(0,230,118,.12);
-  }
-  html { font-family: var(--font-sans); background: var(--obsidian); color: var(--text-1); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
-  button { font-family: var(--font-sans); cursor: pointer; }
-  input, select, textarea { font-family: var(--font-sans); }
-  a { color: var(--emerald); text-decoration: none; }
-
-  /* ── Animated BG ── */
-  .bg-canvas {
-    position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
-  }
-  .bg-orb {
-    position: absolute; border-radius: 50%; filter: blur(90px); opacity: .06;
-    animation: orb-drift 20s ease-in-out infinite;
-  }
-  .bg-orb:nth-child(1) { width:500px;height:500px; background:var(--emerald); top:-100px;right:-100px; animation-delay:0s; }
-  .bg-orb:nth-child(2) { width:400px;height:400px; background:var(--violet); bottom:10%;left:-80px; animation-delay:-8s; }
-  .bg-orb:nth-child(3) { width:300px;height:300px; background:var(--amber); top:40%;right:20%; animation-delay:-14s; }
-  @keyframes orb-drift { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(30px,-20px) scale(1.05)} 66%{transform:translate(-20px,30px) scale(.95)} }
-
-  /* ── Grid overlay ── */
-  .bg-grid {
-    position: fixed; inset: 0; pointer-events: none; z-index: 0;
-    background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
-    background-size: 48px 48px; opacity: .3;
-  }
-
-  /* ── Layout ── */
-  .page { position: relative; z-index: 1; min-height: 100vh; display: none; }
-  .page.active { display: block; }
-
-  /* ── Header ── */
-  .site-header {
-    position: sticky; top: 0; z-index: 100;
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    background: rgba(5,10,14,.8); border-bottom: 1px solid var(--border);
-    padding: 16px 40px; display: flex; align-items: center; justify-content: space-between;
-  }
-  .logo { display: flex; align-items: center; gap: 12px; }
-  .logo-mark { width:36px;height:36px;border-radius:10px;background:var(--emerald);display:flex;align-items:center;justify-content:center;font-size:18px; }
-  .logo-text { font-family:var(--font-serif);font-size:1.3rem;color:var(--text-1);letter-spacing:-.02em; }
-  .header-actions { display:flex;align-items:center;gap:16px; }
-  .header-link { color:var(--text-2);font-size:14px;font-weight:500;transition:color .15s; }
-  .header-link:hover { color:var(--text-1); }
-
-  /* ── Buttons ── */
-  .btn {
-    display:inline-flex;align-items:center;justify-content:center;gap:8px;
-    border:none;border-radius:var(--radius-sm);font-weight:700;transition:all .2s;cursor:pointer;
-    white-space:nowrap;text-decoration:none;
-  }
-  .btn-primary {
-    background:var(--emerald);color:#020a06;padding:12px 24px;font-size:14px;
-    box-shadow:0 0 24px rgba(0,230,118,.25);
-  }
-  .btn-primary:hover { background:#00ff88;box-shadow:0 0 36px rgba(0,230,118,.4);transform:translateY(-1px); }
-  .btn-primary:active { transform:translateY(0); }
-  .btn-primary-lg { padding:16px 36px;font-size:16px;border-radius:10px; }
-  .btn-ghost { background:transparent;color:var(--text-2);padding:10px 18px;font-size:13px;border:1px solid var(--border); }
-  .btn-ghost:hover { border-color:var(--border-light);color:var(--text-1);background:var(--surface-2); }
-  .btn-outline { background:transparent;color:var(--emerald);padding:12px 24px;font-size:14px;border:1.5px solid rgba(0,230,118,.4); }
-  .btn-outline:hover { background:var(--emerald-glow);border-color:var(--emerald); }
-  .btn-full { width:100%; }
-  .btn-disabled { opacity:.45;pointer-events:none; }
-
-  /* ── Step indicator ── */
-  .step-bar { display:flex;align-items:center;gap:0;padding:32px 40px 0; max-width:1000px;margin:0 auto; }
-  .step-item { display:flex;flex-direction:column;align-items:center;flex:1;position:relative; }
-  .step-item:not(:last-child)::after { content:'';position:absolute;top:18px;left:50%;width:100%;height:1px;background:var(--border); z-index:0; }
-  .step-item.active .step-node { background:var(--emerald);color:#020a06;box-shadow:0 0 16px rgba(0,230,118,.4); }
-  .step-item.done .step-node { background:#064e23;border-color:var(--emerald);color:var(--emerald); }
-  .step-node {
-    width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border-light);
-    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;
-    background:var(--surface-2);color:var(--text-3);z-index:1;transition:all .3s;position:relative;
-  }
-  .step-label { font-size:11px;font-weight:700;color:var(--text-3);margin-top:6px;text-transform:uppercase;letter-spacing:.8px; }
-  .step-item.active .step-label { color:var(--emerald); }
-  .step-item.done .step-label { color:var(--emerald-dim); }
-
-  /* ── Form card ── */
-  .form-wrap { max-width:680px;margin:0 auto;padding:40px; }
-  .form-card { background:var(--surface-1);border:1px solid var(--border);border-radius:20px;overflow:hidden; }
-  .form-head { padding:32px 36px 24px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,var(--surface-2),var(--surface-1)); }
-  .form-head-title { font-family:var(--font-serif);font-size:1.6rem;color:var(--text-1);font-weight:400;letter-spacing:-.02em;margin-bottom:6px; }
-  .form-head-sub { color:var(--text-2);font-size:14px; }
-  .form-body { padding:32px 36px; }
-  .form-footer { padding:20px 36px 28px;border-top:1px solid var(--border);background:var(--surface-2);display:flex;align-items:center;justify-content:space-between; }
-
-  /* ── Input ── */
-  .field { margin-bottom:20px; }
-  .field label { display:block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);margin-bottom:8px; }
-  .field-row { display:grid;grid-template-columns:1fr 1fr;gap:16px; }
-  .field-row-3 { display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px; }
-  .input {
-    width:100%;padding:12px 16px;background:var(--surface-2);border:1.5px solid var(--border);
-    border-radius:var(--radius-sm);color:var(--text-1);font-size:14px;font-weight:500;
-    transition:all .2s;outline:none;
-  }
-  .input::placeholder { color:var(--text-3); }
-  .input:focus { border-color:var(--emerald);background:var(--surface-3);box-shadow:0 0 0 3px rgba(0,230,118,.12); }
-  .input.error { border-color:#ff4757; }
-  .error-msg { font-size:11px;color:#ff4757;margin-top:4px;font-weight:600; }
-  .input-prefix { position:relative; }
-  .input-prefix .input { padding-left:100px; }
-  .prefix-text { position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-3);font-size:14px;font-weight:600;pointer-events:none; }
-  .input-suffix { position:relative; }
-  .input-suffix .input { padding-right:130px; }
-  .suffix-text { position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--text-3);font-family:var(--font-mono);font-size:12px;pointer-events:none; }
-  .subdomain-check { display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px; }
-  .subdomain-check.ok { color:var(--emerald); }
-  .subdomain-check.err { color:#ff4757; }
-
-  /* ── Password strength ── */
-  .pw-strength { margin-top:8px; }
-  .pw-bars { display:flex;gap:4px;margin-bottom:6px; }
-  .pw-bar { flex:1;height:3px;border-radius:2px;background:var(--border);transition:background .3s; }
-  .pw-bar.filled-1 { background:#ff4757; }
-  .pw-bar.filled-2 { background:#ff9f43; }
-  .pw-bar.filled-3 { background:var(--amber); }
-  .pw-bar.filled-4 { background:var(--emerald); }
-  .pw-label { font-size:11px;color:var(--text-3); }
-
-  /* ── OTP field ── */
-  .otp-row { display:flex;gap:10px;justify-content:center; }
-  .otp-input { width:50px;height:58px;text-align:center;font-size:20px;font-weight:800;font-family:var(--font-mono); background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);outline:none;transition:all .2s; }
-  .otp-input:focus { border-color:var(--emerald);box-shadow:0 0 0 3px rgba(0,230,118,.15); }
-
-  /* ── Plan Cards ── */
-  .plans-wrap { max-width:1100px;margin:0 auto;padding:40px; }
-  .plans-head { text-align:center;margin-bottom:48px; }
-  .plans-head h1 { font-family:var(--font-serif);font-size:3rem;letter-spacing:-.04em;margin-bottom:12px; }
-  .plans-head p { color:var(--text-2);font-size:1.05rem;max-width:500px;margin:0 auto; }
-  .billing-toggle { display:inline-flex;align-items:center;gap:16px;background:var(--surface-2);border:1px solid var(--border);border-radius:100px;padding:6px 20px;margin:28px auto 0;
-  }
-  .billing-toggle label { font-size:14px;font-weight:600;color:var(--text-2);cursor:pointer;transition:color .2s; }
-  .billing-toggle label.active { color:var(--text-1); }
-  .toggle-switch { width:44px;height:24px;background:var(--emerald);border-radius:12px;position:relative;cursor:pointer;transition:background .2s; }
-  .toggle-switch::after { content:'';width:18px;height:18px;background:#fff;border-radius:9px;position:absolute;top:3px;left:3px;transition:left .2s; }
-  .toggle-switch.monthly::after { left:23px; }
-  .save-badge { font-size:11px;font-weight:800;color:#020a06;background:var(--emerald);padding:3px 8px;border-radius:6px;margin-left:4px; }
-  .plans-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:24px; }
-  .plan-card {
-    background:var(--surface-1);border:1.5px solid var(--border);border-radius:20px;
-    padding:32px;cursor:pointer;position:relative;overflow:hidden;transition:all .25s;
-  }
-  .plan-card:hover { border-color:var(--border-light);transform:translateY(-3px); }
-  .plan-card.selected { border-color:var(--emerald);box-shadow:0 0 40px rgba(0,230,118,.15);transform:translateY(-4px); }
-  .plan-card.popular { border-color:#7c3aed; }
-  .plan-card.popular.selected { border-color:var(--emerald); }
-  .popular-badge { position:absolute;top:16px;right:16px;font-size:11px;font-weight:800;color:#fff;background:#7c3aed;padding:4px 10px;border-radius:6px; }
-  .plan-icon { font-size:32px;margin-bottom:16px;display:block; }
-  .plan-name { font-family:var(--font-serif);font-size:1.4rem;margin-bottom:4px; }
-  .plan-tagline { color:var(--text-2);font-size:13px;margin-bottom:24px; }
-  .plan-price { display:flex;align-items:baseline;gap:4px;margin-bottom:4px; }
-  .price-amount { font-family:var(--font-serif);font-size:2.4rem;font-weight:400;letter-spacing:-.04em; }
-  .price-period { color:var(--text-2);font-size:13px; }
-  .price-annual { font-size:12px;color:var(--emerald);font-weight:700;margin-bottom:24px; }
-  .plan-divider { border:none;border-top:1px solid var(--border);margin-bottom:20px; }
-  .plan-features { list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:28px; }
-  .plan-features li { display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-2); }
-  .plan-features li.yes { color:var(--text-1); }
-  .feat-icon { font-size:14px;flex-shrink:0; }
-  .plan-select-btn { width:100%;padding:14px;border-radius:var(--radius-sm);font-size:14px;font-weight:800;border:1.5px solid var(--border-light);background:var(--surface-2);color:var(--text-1);cursor:pointer;transition:all .2s; }
-  .plan-card.selected .plan-select-btn { background:var(--emerald);color:#020a06;border-color:var(--emerald);box-shadow:0 0 20px rgba(0,230,118,.25); }
-  .plan-card:hover:not(.selected) .plan-select-btn { border-color:var(--border-light);background:var(--surface-3); }
-
-  /* ── Checkout ── */
-  .checkout-wrap { max-width:1000px;margin:0 auto;padding:40px;display:grid;grid-template-columns:1fr 380px;gap:32px; }
-  .checkout-main { display:flex;flex-direction:column;gap:24px; }
-  .checkout-sidebar { position:sticky;top:88px;height:fit-content; }
-  .order-card { background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);padding:28px; }
-  .order-title { font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);margin-bottom:20px; }
-  .order-plan { display:flex;align-items:center;gap:14px;padding:16px;background:var(--surface-2);border-radius:var(--radius-sm);margin-bottom:16px; }
-  .order-plan-icon { font-size:28px; }
-  .order-plan-name { font-family:var(--font-serif);font-size:1.1rem; }
-  .order-plan-sub { font-size:12px;color:var(--text-2); }
-  .order-line { display:flex;justify-content:space-between;font-size:14px;padding:8px 0;color:var(--text-2); }
-  .order-line strong { color:var(--text-1); }
-  .order-divider { border:none;border-top:1px solid var(--border);margin:12px 0; }
-  .order-total { display:flex;justify-content:space-between;font-size:16px;font-weight:800; }
-  .order-total-amount { font-family:var(--font-serif);font-size:1.5rem;color:var(--emerald); }
-  .security-badges { display:flex;flex-direction:column;gap:8px;margin-top:20px; }
-  .security-badge { display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3); }
-
-  /* ── Section card ── */
-  .section-card { background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);padding:28px; }
-  .section-card-title { font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);margin-bottom:20px; }
-
-  /* ── Payment method tabs ── */
-  .pay-tabs { display:flex;gap:8px;margin-bottom:20px; }
-  .pay-tab { padding:10px 18px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface-2);color:var(--text-2);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s; }
-  .pay-tab.active { border-color:var(--emerald);background:var(--emerald-glow);color:var(--emerald); }
-
-  /* ── Success page ── */
-  .success-wrap { max-width:640px;margin:0 auto;padding:80px 40px;text-align:center; }
-  .success-ring { width:120px;height:120px;border-radius:50%;border:2px solid var(--emerald);display:flex;align-items:center;justify-content:center;margin:0 auto 32px;position:relative;
-    box-shadow:0 0 60px rgba(0,230,118,.25),inset 0 0 40px rgba(0,230,118,.1);
-    animation:ring-in .6s cubic-bezier(.175,.885,.32,1.275) both;
-  }
-  @keyframes ring-in { from{transform:scale(.5);opacity:0} to{transform:scale(1);opacity:1} }
-  .success-checkmark { font-size:52px; }
-  .success-title { font-family:var(--font-serif);font-size:2.5rem;letter-spacing:-.04em;margin-bottom:16px;animation:fade-up .5s .2s both; }
-  .success-sub { color:var(--text-2);font-size:1rem;margin-bottom:40px;line-height:1.8;animation:fade-up .5s .3s both; }
-  @keyframes fade-up { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-  .workspace-url-card { background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;margin-bottom:32px;text-align:left;animation:fade-up .5s .4s both; }
-  .url-label { font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);margin-bottom:10px; }
-  .url-value { font-family:var(--font-mono);font-size:1.1rem;color:var(--emerald);display:flex;align-items:center;justify-content:space-between; }
-  .copy-btn { background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:6px 12px;color:var(--text-2);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s; }
-  .copy-btn:hover { border-color:var(--emerald);color:var(--emerald); }
-  .next-steps { display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:36px;text-align:left;animation:fade-up .5s .5s both; }
-  .next-step-card { background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);padding:20px; }
-  .next-step-icon { font-size:24px;margin-bottom:10px; }
-  .next-step-title { font-size:14px;font-weight:800;margin-bottom:4px; }
-  .next-step-desc { font-size:12px;color:var(--text-2);line-height:1.6; }
-  .success-actions { display:flex;gap:12px;justify-content:center;animation:fade-up .5s .6s both; }
-
-  /* ── First-login wizard ── */
-  .wizard-wrap { max-width:800px;margin:0 auto;padding:40px; }
-  .wizard-head { text-align:center;margin-bottom:40px; }
-  .wizard-steps { display:flex;gap:8px;justify-content:center;margin-bottom:40px; }
-  .wstep { display:flex;align-items:center;gap:8px; }
-  .wstep-num { width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background:var(--surface-3);border:1.5px solid var(--border);color:var(--text-3);transition:all .3s; }
-  .wstep.active .wstep-num { background:var(--emerald);color:#020a06;border-color:var(--emerald);box-shadow:0 0 12px rgba(0,230,118,.3); }
-  .wstep.done .wstep-num { background:var(--surface-3);color:var(--emerald);border-color:var(--emerald); }
-  .wstep-label { font-size:12px;font-weight:700;color:var(--text-3); }
-  .wstep.active .wstep-label { color:var(--text-1); }
-  .wstep-sep { width:32px;height:1px;background:var(--border); }
-
-  /* ── Upload zone ── */
-  .upload-zone { border:2px dashed var(--border);border-radius:var(--radius);padding:40px;text-align:center;cursor:pointer;transition:all .2s; }
-  .upload-zone:hover { border-color:var(--emerald-dim);background:rgba(0,230,118,.04); }
-  .upload-icon { font-size:40px;margin-bottom:12px; }
-  .upload-hint { font-size:13px;color:var(--text-2); }
-
-  /* ── Team invite ── */
-  .invite-row { display:flex;gap:10px;margin-bottom:10px; }
-  .invite-row .input { flex:1; }
-  .role-select { padding:12px 14px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);font-size:13px;font-weight:600;outline:none;min-width:130px; }
-
-  /* ── Checklist ── */
-  .checklist { display:flex;flex-direction:column;gap:10px; }
-  .check-item { display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);transition:all .15s; }
-  .check-item.done { border-color:rgba(0,230,118,.3);background:rgba(0,230,118,.05); }
-  .check-icon { font-size:20px;flex-shrink:0; }
-  .check-text { flex:1;font-size:14px;font-weight:600; }
-  .check-status { font-size:12px;font-weight:700; }
-  .check-item.done .check-status { color:var(--emerald); }
-  .check-item:not(.done) .check-status { color:var(--text-3); }
-
-  /* ── Alert bar ── */
-  .alert-bar { padding:12px 20px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px; }
-  .alert-bar.success { background:rgba(0,230,118,.12);border:1px solid rgba(0,230,118,.25);color:var(--emerald); }
-  .alert-bar.error { background:rgba(255,71,87,.12);border:1px solid rgba(255,71,87,.25);color:#ff4757; }
-  .alert-bar.info { background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.25);color:var(--sky); }
-
-  /* ── Misc ── */
-  .text-emerald { color:var(--emerald); }
-  .text-muted { color:var(--text-2); }
-  .text-xs { font-size:12px; }
-  .mono { font-family:var(--font-mono); }
-  .hidden { display:none!important; }
-  .loading-spinner { display:inline-block;width:18px;height:18px;border:2px solid rgba(0,230,118,.3);border-top-color:var(--emerald);border-radius:50%;animation:spin .7s linear infinite; }
-  @keyframes spin { to{transform:rotate(360deg)} }
-  .progress-bar { height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:4px; }
-  .progress-fill { height:100%;background:var(--emerald);border-radius:2px;transition:width .5s ease; }
-  .terms-check { display:flex;align-items:flex-start;gap:12px;margin-top:4px; }
-  .terms-check input[type=checkbox] { width:16px;height:16px;margin-top:2px;accent-color:var(--emerald);cursor:pointer;flex-shrink:0; }
-  .terms-check label { font-size:13px;color:var(--text-2);line-height:1.6; }
-
-  @media (max-width:768px) {
-    .site-header { padding:14px 20px; }
-    .plans-grid { grid-template-columns:1fr; }
-    .checkout-wrap { grid-template-columns:1fr; }
-    .checkout-sidebar { position:static; }
-    .field-row, .field-row-3 { grid-template-columns:1fr; }
-    .form-wrap, .plans-wrap, .checkout-wrap, .wizard-wrap { padding:20px; }
-    .plans-head h1 { font-size:2rem; }
-    .next-steps { grid-template-columns:1fr; }
-    .step-bar { padding:24px 20px 0; }
-  }
+:root{
+  --navy:#0A1F44;--navy2:#1A3A6B;--accent:#1D4ED8;--accent2:#3B82F6;
+  --bg:#F7F9FC;--card:#FFFFFF;--card2:#EEF2F8;
+  --txt:#111827;--txt2:#374151;--txt3:#6B7280;
+  --border:#DDE3EE;--border2:#C5D0E0;
+  --error:#DC2626;--success:#15803D;
+  --radius:14px;
+  --shadow:0 2px 16px rgba(10,31,68,.07);
+  --shadow-lg:0 8px 40px rgba(10,31,68,.12);
+  --transition:.22s cubic-bezier(.4,0,.2,1);
+}
+[data-theme="dark"]{
+  --bg:#0D1B2E;--card:#132338;--card2:#1A2F47;
+  --txt:#F0F4FA;--txt2:#B8C8DC;--txt3:#7A94B0;
+  --border:#1E3352;--border2:#2A4468;
+  --shadow:0 2px 16px rgba(0,0,0,.35);
+  --shadow-lg:0 8px 40px rgba(0,0,0,.5);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);transition:background var(--transition),color var(--transition);overflow-x:hidden;min-height:100vh;}
+canvas#bg3d{position:fixed;inset:0;z-index:0;pointer-events:none;}
+/* HEADER */
+header{position:sticky;top:0;z-index:99;background:rgba(247,249,252,.95);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 24px;height:64px;display:flex;align-items:center;gap:16px;transition:background var(--transition);}
+[data-theme="dark"] header{background:rgba(13,27,46,.95);}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--txt);font-weight:700;font-size:20px;}
+.nav-spacer{flex:1;}
+.btn-back{display:flex;align-items:center;gap:4px;padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--txt2);font-size:14px;cursor:pointer;transition:all var(--transition);}
+.btn-back:hover{background:var(--card);color:var(--txt);}
+.theme-toggle{width:38px;height:38px;border-radius:50%;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--txt2);transition:all var(--transition);}
+.theme-toggle:hover{background:var(--card);}
+/* PAGES */
+.page{display:none;position:relative;z-index:1;min-height:calc(100vh - 64px);}
+.page.active{display:block;}
+/* PLANS PAGE */
+.plans-container{max-width:1000px;margin:0 auto;padding:60px 24px;}
+.plans-header{text-align:center;margin-bottom:48px;}
+.plans-header h1{font-family:'Instrument Serif',serif;font-size:clamp(2rem,5vw,3rem);margin-bottom:12px;}
+.plans-header p{font-size:1rem;color:var(--txt2);}
+.billing-toggle-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:40px;}
+.toggle-track{width:52px;height:28px;border-radius:999px;background:var(--border);position:relative;cursor:pointer;transition:background var(--transition);}
+.toggle-track.on{background:var(--accent);}
+.toggle-thumb{width:22px;height:22px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;transition:transform var(--transition);box-shadow:0 2px 6px rgba(0,0,0,.2);}
+.toggle-track.on .toggle-thumb{transform:translateX(24px);}
+.plans-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;}
+.plan-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:32px;box-shadow:var(--shadow);position:relative;transition:all var(--transition);cursor:pointer;}
+.plan-card:hover{transform:translateY(-4px);border-color:var(--accent);}
+.plan-card.popular{border-color:var(--accent);box-shadow:0 8px 32px rgba(37,99,235,.2);}
+.plan-card.selected{border-color:var(--accent);background:rgba(37,99,235,.04);}
+.popular-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:12px;font-weight:600;padding:4px 16px;border-radius:999px;}
+.plan-name{font-size:18px;font-weight:700;margin-bottom:8px;}
+.plan-price{font-family:'Instrument Serif',serif;font-size:2.6rem;line-height:1;margin-bottom:4px;}
+.plan-price span{font-size:15px;font-family:'DM Sans',sans-serif;color:var(--txt2);}
+.plan-desc{font-size:14px;color:var(--txt2);margin-bottom:20px;}
+.plan-features{list-style:none;display:flex;flex-direction:column;gap:9px;margin-bottom:24px;}
+.plan-features li{display:flex;align-items:center;gap:8px;font-size:14px;}
+.plan-features li .material-icons-round{font-size:17px;color:var(--success);}
+.btn-select-plan{width:100%;padding:12px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer;transition:all var(--transition);}
+.btn-select-plan:hover{background:var(--navy2);}
+/* SIGNUP PAGE */
+.signup-container{max-width:680px;margin:0 auto;padding:40px 24px;}
+.progress-bar{display:flex;align-items:center;gap:0;margin-bottom:40px;}
+.prog-step{display:flex;flex-direction:column;align-items:center;flex:1;}
+.prog-circle{width:36px;height:36px;border-radius:50%;border:2px solid var(--border);background:var(--card);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--txt2);transition:all var(--transition);position:relative;z-index:1;}
+.prog-circle.active{border-color:var(--accent);background:var(--accent);color:#fff;}
+.prog-circle.done{border-color:var(--success);background:var(--success);color:#fff;}
+.prog-label{font-size:11px;color:var(--txt2);margin-top:6px;text-align:center;}
+.prog-line{flex:1;height:2px;background:var(--border);margin-top:-18px;transition:background var(--transition);}
+.prog-line.done{background:var(--success);}
+.step-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:36px;box-shadow:var(--shadow);}
+.step-card h2{font-family:'Instrument Serif',serif;font-size:1.6rem;margin-bottom:6px;}
+.step-card .step-sub{font-size:14px;color:var(--txt2);margin-bottom:28px;}
+/* FORM ELEMENTS */
+.form-group{margin-bottom:18px;}
+.form-group label{display:block;font-size:14px;font-weight:500;margin-bottom:6px;color:var(--txt);}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--txt);font-size:14px;font-family:'DM Sans',sans-serif;transition:border var(--transition);}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--accent);}
+.form-group input.error,.form-group select.error{border-color:var(--error);}
+.form-group input:disabled{opacity:.5;cursor:not-allowed;}
+.field-error{font-size:12px;color:var(--error);margin-top:4px;display:none;}
+.field-error.show{display:block;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+/* CHIPS */
+.chips-group{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
+.chip{padding:7px 16px;border-radius:999px;border:1px solid var(--border);background:var(--bg);color:var(--txt2);font-size:13px;cursor:pointer;transition:all var(--transition);}
+.chip:hover{border-color:var(--accent);color:var(--accent);}
+.chip.selected{border-color:var(--accent);background:var(--accent);color:#fff;}
+/* STEP BUTTONS */
+.step-actions{display:flex;gap:12px;margin-top:28px;}
+.btn-next{flex:1;padding:13px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer;transition:all var(--transition);}
+.btn-next:hover{background:var(--navy2);}
+.btn-prev{padding:13px 24px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--txt2);font-size:15px;cursor:pointer;transition:all var(--transition);}
+.btn-prev:hover{background:var(--card);color:var(--txt);}
+/* REVIEW */
+.review-section{margin-bottom:20px;}
+.review-section h4{font-size:13px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+.review-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;}
+.review-row:last-child{border-bottom:none;}
+.review-row .lbl{color:var(--txt2);}
+.review-row .val{font-weight:500;}
+/* CHECKOUT PAGE */
+.checkout-layout{display:grid;grid-template-columns:1fr 380px;gap:32px;max-width:1000px;margin:0 auto;padding:40px 24px;}
+.checkout-form-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:36px;box-shadow:var(--shadow);}
+.checkout-form-card h2{font-family:'Instrument Serif',serif;font-size:1.6rem;margin-bottom:24px;}
+.order-summary{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px;box-shadow:var(--shadow);position:sticky;top:80px;}
+.order-summary h3{font-size:16px;font-weight:700;margin-bottom:20px;}
+.order-line{display:flex;justify-content:space-between;font-size:14px;padding:8px 0;border-bottom:1px solid var(--border);}
+.order-line:last-of-type{border-bottom:none;}
+.order-total{display:flex;justify-content:space-between;font-size:16px;font-weight:700;padding-top:16px;border-top:2px solid var(--border);margin-top:8px;}
+.btn-pay{width:100%;padding:14px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer;transition:all var(--transition);margin-top:20px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-pay:hover:not(:disabled){background:var(--navy2);}
+.btn-pay:disabled{opacity:.6;cursor:not-allowed;}
+/* SUCCESS PAGE */
+.success-container{max-width:520px;margin:0 auto;padding:80px 24px;text-align:center;}
+.success-icon{width:80px;height:80px;border-radius:50%;background:rgba(22,163,74,.1);border:2px solid var(--success);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;color:var(--success);}
+.success-container h1{font-family:'Instrument Serif',serif;font-size:2rem;margin-bottom:12px;}
+.success-container p{font-size:15px;color:var(--txt2);line-height:1.7;margin-bottom:32px;}
+/* BADGE */
+.badge-soon{background:#F59E0B;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:8px;vertical-align:middle;}
+/* SPINNER */
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+/* SUBDOMAIN INPUT */
+.subdomain-row{display:flex;align-items:center;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--bg);}
+.subdomain-row input{flex:1;padding:11px 14px;border:none;background:transparent;color:var(--txt);font-size:14px;font-family:'DM Sans',sans-serif;}
+.subdomain-row input:focus{outline:none;}
+.subdomain-row input.error{border-color:var(--error);}
+.subdomain-suffix{padding:11px 14px;background:var(--border);color:var(--txt2);font-size:13px;white-space:nowrap;}
+@media(max-width:768px){
+  .checkout-layout{grid-template-columns:1fr;}
+  .order-summary{position:static;}
+  .form-row{grid-template-columns:1fr;}
+}
 </style>
 </head>
 <body>
+<canvas id="bg3d"></canvas>
 
-<div class="bg-canvas">
-  <div class="bg-orb"></div>
-  <div class="bg-orb"></div>
-  <div class="bg-orb"></div>
-</div>
-<div class="bg-grid"></div>
-
-<!-- ─── HEADER ─────────────────────────────────────────── -->
-<header class="site-header">
-  <div class="logo">
-    <div class="logo-mark">🏗</div>
-    <span class="logo-text">Realesso</span>
-  </div>
-  <div class="header-actions">
-    <a href="#" class="header-link">Pricing</a>
-    <a href="#" class="header-link">Features</a>
-    <button class="btn btn-ghost" onclick="window.location.href='/login'">Sign In</button>
-    <button class="btn btn-primary" onclick="showPage('plans')">Get Started</button>
-  </div>
+<!-- HEADER -->
+<header>
+  <a class="nav-logo" href="realesso_marketing_website.html">
+    <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+      <rect x="4" y="14" width="10" height="18" rx="2" fill="currentColor" opacity=".9"/>
+      <rect x="16" y="8" width="12" height="24" rx="2" fill="currentColor"/>
+    </svg>
+    Realesso
+  </a>
+  <div class="nav-spacer"></div>
+  <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+    <span class="material-icons-round" id="theme-icon">light_mode</span>
+  </button>
 </header>
 
-<!-- ═══ PAGE: PLANS ═══════════════════════════════════════ -->
-<div id="page-plans" class="page active">
-  <div class="plans-wrap">
-    <div class="plans-head">
-      <h1>Choose your <em>plan</em></h1>
-      <p>All plans include 14-day free trial. No credit card required to start.</p>
-      <div class="billing-toggle">
-        <label id="lbl-monthly" class="active" onclick="setBilling('monthly')">Monthly</label>
-        <div class="toggle-switch" id="billing-toggle" onclick="toggleBilling()"></div>
-        <label id="lbl-yearly" onclick="setBilling('yearly')">Yearly <span class="save-badge">Save 17%</span></label>
-      </div>
+<!-- ===== PLANS PAGE ===== -->
+<div class="page active" id="page-plans">
+  <div class="plans-container">
+    <div class="plans-header">
+      <h1>Choose your plan</h1>
+      <p>Start free for 14 days. No credit card required.</p>
     </div>
-
+    <div class="billing-toggle-row">
+      <span style="font-size:14px;font-weight:500;">Monthly</span>
+      <div class="toggle-track" id="billing-toggle" onclick="toggleBilling()">
+        <div class="toggle-thumb"></div>
+      </div>
+      <span style="font-size:14px;font-weight:500;">Yearly</span>
+      <span style="background:rgba(22,163,74,.1);color:var(--success);font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;">Save 20%</span>
+    </div>
     <div class="plans-grid">
-      <!-- Starter -->
-      <div class="plan-card" id="card-starter" onclick="selectPlan('starter')">
-        <span class="plan-icon">🌱</span>
+      <div class="plan-card" id="plan-card-starter" onclick="selectPlan('starter')">
         <div class="plan-name">Starter</div>
-        <div class="plan-tagline">Perfect for small builders</div>
-        <div class="plan-price">
-          <span class="price-amount" id="price-starter">₹4,999</span>
-          <span class="price-period">/month</span>
-        </div>
-        <div class="price-annual" id="annual-starter">&nbsp;</div>
-        <hr class="plan-divider" />
+        <div class="plan-price" id="pp-starter">₹2,999<span>/mo</span></div>
+        <div class="plan-desc">Perfect for small agencies just getting started.</div>
         <ul class="plan-features">
-          <li class="yes"><span class="feat-icon">✓</span>10 team members</li>
-          <li class="yes"><span class="feat-icon">✓</span>3 projects</li>
-          <li class="yes"><span class="feat-icon">✓</span>500 leads/month</li>
-          <li class="yes"><span class="feat-icon">✓</span>Lead CRM & Pipeline</li>
-          <li class="yes"><span class="feat-icon">✓</span>Site Visit Management</li>
-          <li class="yes"><span class="feat-icon">✓</span>Booking System</li>
-          <li><span class="feat-icon">✗</span>Payment Management</li>
-          <li><span class="feat-icon">✗</span>Channel Partners</li>
-          <li><span class="feat-icon">✗</span>AI Insights</li>
+          <li><span class="material-icons-round">check_circle</span>Up to 5 agents</li>
+          <li><span class="material-icons-round">check_circle</span>500 leads/month</li>
+          <li><span class="material-icons-round">check_circle</span>Basic reports</li>
+          <li><span class="material-icons-round">check_circle</span>Email support</li>
         </ul>
-        <button class="plan-select-btn" id="btn-starter">Select Starter</button>
+        <button class="btn-select-plan">Select Starter</button>
       </div>
-
-      <!-- Growth (popular) -->
-      <div class="plan-card popular" id="card-growth" onclick="selectPlan('growth')">
-        <div class="popular-badge">⭐ Most Popular</div>
-        <span class="plan-icon">🚀</span>
+      <div class="plan-card popular" id="plan-card-growth" onclick="selectPlan('growth')">
+        <div class="popular-badge">Most Popular</div>
         <div class="plan-name">Growth</div>
-        <div class="plan-tagline">For growing real estate teams</div>
-        <div class="plan-price">
-          <span class="price-amount" id="price-growth">₹14,999</span>
-          <span class="price-period">/month</span>
-        </div>
-        <div class="price-annual" id="annual-growth">&nbsp;</div>
-        <hr class="plan-divider" />
+        <div class="plan-price" id="pp-growth">₹7,999<span>/mo</span></div>
+        <div class="plan-desc">For growing agencies that need more power.</div>
         <ul class="plan-features">
-          <li class="yes"><span class="feat-icon">✓</span>25 team members</li>
-          <li class="yes"><span class="feat-icon">✓</span>10 projects</li>
-          <li class="yes"><span class="feat-icon">✓</span>2,000 leads/month</li>
-          <li class="yes"><span class="feat-icon">✓</span>All Starter features</li>
-          <li class="yes"><span class="feat-icon">✓</span>Payment Management</li>
-          <li class="yes"><span class="feat-icon">✓</span>Channel Partner Portal</li>
-          <li class="yes"><span class="feat-icon">✓</span>Document Vault & KYC</li>
-          <li class="yes"><span class="feat-icon">✓</span>Custom Domain</li>
-          <li><span class="feat-icon">✗</span>AI Insights</li>
+          <li><span class="material-icons-round">check_circle</span>Up to 25 agents</li>
+          <li><span class="material-icons-round">check_circle</span>Unlimited leads</li>
+          <li><span class="material-icons-round">check_circle</span>Advanced analytics</li>
+          <li><span class="material-icons-round">check_circle</span>WhatsApp notifications</li>
+          <li><span class="material-icons-round">check_circle</span>Priority support</li>
         </ul>
-        <button class="plan-select-btn" id="btn-growth">Select Growth</button>
+        <button class="btn-select-plan">Select Growth</button>
       </div>
-
-      <!-- Enterprise -->
-      <div class="plan-card" id="card-enterprise" onclick="selectPlan('enterprise')">
-        <span class="plan-icon">🏆</span>
+      <div class="plan-card" id="plan-card-enterprise" onclick="selectPlan('enterprise')">
         <div class="plan-name">Enterprise</div>
-        <div class="plan-tagline">For large builders & groups</div>
-        <div class="plan-price">
-          <span class="price-amount" id="price-enterprise">₹39,999</span>
-          <span class="price-period">/month</span>
-        </div>
-        <div class="price-annual" id="annual-enterprise">&nbsp;</div>
-        <hr class="plan-divider" />
+        <div class="plan-price" id="pp-enterprise">₹19,999<span>/mo</span></div>
+        <div class="plan-desc">For large agencies with complex requirements.</div>
         <ul class="plan-features">
-          <li class="yes"><span class="feat-icon">✓</span>Unlimited users</li>
-          <li class="yes"><span class="feat-icon">✓</span>Unlimited projects</li>
-          <li class="yes"><span class="feat-icon">✓</span>Unlimited leads</li>
-          <li class="yes"><span class="feat-icon">✓</span>All Growth features</li>
-          <li class="yes"><span class="feat-icon">✓</span>AI Lead Scoring</li>
-          <li class="yes"><span class="feat-icon">✓</span>Marketing Automation</li>
-          <li class="yes"><span class="feat-icon">✓</span>White-label branding</li>
-          <li class="yes"><span class="feat-icon">✓</span>Dedicated CSM</li>
-          <li class="yes"><span class="feat-icon">✓</span>24/7 phone support</li>
+          <li><span class="material-icons-round">check_circle</span>Unlimited agents</li>
+          <li><span class="material-icons-round">check_circle</span>Unlimited leads</li>
+          <li><span class="material-icons-round">check_circle</span>Custom integrations</li>
+          <li><span class="material-icons-round">check_circle</span>Custom Domain <span class="badge-soon">Soon</span></li>
+          <li><span class="material-icons-round">check_circle</span>Dedicated manager</li>
         </ul>
-        <button class="plan-select-btn" id="btn-enterprise">Select Enterprise</button>
-      </div>
-    </div>
-
-    <div style="text-align:center;margin-top:28px;">
-      <p class="text-muted text-xs">🔒 256-bit SSL encryption &nbsp;·&nbsp; 💰 30-day money-back guarantee &nbsp;·&nbsp; 🤝 Cancel anytime</p>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ PAGE: SIGNUP ══════════════════════════════════════ -->
-<div id="page-signup" class="page">
-  <div id="signup-step-bar" class="step-bar">
-    <div class="step-item active" id="sbar-0"><div class="step-node">1</div><div class="step-label">Account</div></div>
-    <div class="step-item" id="sbar-1"><div class="step-node">2</div><div class="step-label">Business</div></div>
-    <div class="step-item" id="sbar-2"><div class="step-node">3</div><div class="step-label">Workspace</div></div>
-    <div class="step-item" id="sbar-3"><div class="step-node">4</div><div class="step-label">Verify</div></div>
-  </div>
-
-  <!-- Step 0: Account Details -->
-  <div id="signup-0" class="form-wrap">
-    <div class="form-card">
-      <div class="form-head">
-        <div class="form-head-title">Create your account</div>
-        <div class="form-head-sub">You're signing up for <span id="chosen-plan-label" class="text-emerald">Growth Plan</span></div>
-      </div>
-      <div class="form-body">
-        <div class="field field-row">
-          <div>
-            <label>Owner / MD Full Name *</label>
-            <input class="input" id="f-owner" type="text" placeholder="Rajesh Sharma" oninput="clearErr('f-owner')" />
-            <div class="error-msg hidden" id="err-owner"></div>
-          </div>
-          <div>
-            <label>Company Name *</label>
-            <input class="input" id="f-company" type="text" placeholder="Sunrise Builders Pvt Ltd" oninput="onCompanyInput()" />
-            <div class="error-msg hidden" id="err-company"></div>
-          </div>
-        </div>
-        <div class="field field-row">
-          <div>
-            <label>Work Email *</label>
-            <input class="input" id="f-email" type="email" placeholder="owner@company.com" oninput="clearErr('f-email')" />
-            <div class="error-msg hidden" id="err-email"></div>
-          </div>
-          <div>
-            <label>Mobile Number *</label>
-            <div class="input-prefix">
-              <span class="prefix-text">🇮🇳 +91</span>
-              <input class="input" id="f-phone" type="tel" placeholder="98765 43210" maxlength="10" oninput="clearErr('f-phone')" />
-            </div>
-            <div class="error-msg hidden" id="err-phone"></div>
-          </div>
-        </div>
-        <div class="field field-row">
-          <div>
-            <label>Password *</label>
-            <input class="input" id="f-password" type="password" placeholder="Min 8 chars" oninput="checkPassword()" />
-            <div class="pw-strength" id="pw-strength-wrap">
-              <div class="pw-bars">
-                <div class="pw-bar" id="pwb0"></div>
-                <div class="pw-bar" id="pwb1"></div>
-                <div class="pw-bar" id="pwb2"></div>
-                <div class="pw-bar" id="pwb3"></div>
-              </div>
-              <div class="pw-label" id="pw-label">Enter a strong password</div>
-            </div>
-            <div class="error-msg hidden" id="err-password"></div>
-          </div>
-          <div>
-            <label>Confirm Password *</label>
-            <input class="input" id="f-confirm" type="password" placeholder="Re-enter password" oninput="clearErr('f-confirm')" />
-            <div class="error-msg hidden" id="err-confirm"></div>
-          </div>
-        </div>
-        <div class="terms-check">
-          <input type="checkbox" id="f-terms" />
-          <label for="f-terms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>. By signing up you confirm you are authorized to create a company account.</label>
-        </div>
-        <div class="error-msg hidden" id="err-terms" style="margin-top:4px;"></div>
-      </div>
-      <div class="form-footer">
-        <button class="btn btn-ghost" onclick="showPage('plans')">← Change Plan</button>
-        <button class="btn btn-primary" onclick="signupStep0Next()">Continue →</button>
-      </div>
-    </div>
-    <p style="text-align:center;margin-top:16px;font-size:13px;" class="text-muted">Already have an account? <a href="/login">Sign in →</a></p>
-  </div>
-
-  <!-- Step 1: Business Details -->
-  <div id="signup-1" class="form-wrap hidden">
-    <div class="form-card">
-      <div class="form-head">
-        <div class="form-head-title">Tell us about your business</div>
-        <div class="form-head-sub">Helps us personalise your CRM experience</div>
-      </div>
-      <div class="form-body">
-        <div class="field field-row">
-          <div>
-            <label>City *</label>
-            <input class="input" id="f-city" type="text" placeholder="Mumbai" />
-          </div>
-          <div>
-            <label>State *</label>
-            <input class="input" id="f-state" type="text" placeholder="Maharashtra" />
-          </div>
-        </div>
-        <div class="field">
-          <label>Industry Type *</label>
-          <div style="display:flex;flex-wrap:wrap;gap:8px;" id="industry-chips">
-            <button class="chip-btn" data-val="Residential Real Estate" onclick="selectChip(this,'industry')">Residential</button>
-            <button class="chip-btn" data-val="Commercial Real Estate" onclick="selectChip(this,'industry')">Commercial</button>
-            <button class="chip-btn" data-val="Mixed-Use Development" onclick="selectChip(this,'industry')">Mixed-Use</button>
-            <button class="chip-btn" data-val="Township Development" onclick="selectChip(this,'industry')">Township</button>
-            <button class="chip-btn" data-val="Luxury Real Estate" onclick="selectChip(this,'industry')">Luxury</button>
-            <button class="chip-btn" data-val="Affordable Housing" onclick="selectChip(this,'industry')">Affordable Housing</button>
-          </div>
-          <div class="error-msg hidden" id="err-industry"></div>
-        </div>
-        <div class="field">
-          <label>Company Size *</label>
-          <div style="display:flex;flex-wrap:wrap;gap:8px;" id="size-chips">
-            <button class="chip-btn" data-val="1–5" onclick="selectChip(this,'size')">1–5</button>
-            <button class="chip-btn" data-val="6–15" onclick="selectChip(this,'size')">6–15</button>
-            <button class="chip-btn" data-val="16–50" onclick="selectChip(this,'size')">16–50</button>
-            <button class="chip-btn" data-val="51–150" onclick="selectChip(this,'size')">51–150</button>
-            <button class="chip-btn" data-val="150+" onclick="selectChip(this,'size')">150+</button>
-          </div>
-          <div class="error-msg hidden" id="err-size"></div>
-        </div>
-        <div class="field">
-          <label>Expected CRM Users *</label>
-          <div style="display:flex;flex-wrap:wrap;gap:8px;" id="users-chips">
-            <button class="chip-btn" data-val="1–5" onclick="selectChip(this,'users')">1–5 users</button>
-            <button class="chip-btn" data-val="6–15" onclick="selectChip(this,'users')">6–15 users</button>
-            <button class="chip-btn" data-val="16–30" onclick="selectChip(this,'users')">16–30 users</button>
-            <button class="chip-btn" data-val="30+" onclick="selectChip(this,'users')">30+ users</button>
-          </div>
-        </div>
-        <div class="field">
-          <label>Primary Business Type *</label>
-          <div style="display:flex;flex-wrap:wrap;gap:8px;" id="btype-chips">
-            <button class="chip-btn" data-val="Builder / Developer" onclick="selectChip(this,'btype')">Builder / Developer</button>
-            <button class="chip-btn" data-val="Real Estate Agency" onclick="selectChip(this,'btype')">Real Estate Agency</button>
-            <button class="chip-btn" data-val="Marketing Company" onclick="selectChip(this,'btype')">Marketing Company</button>
-            <button class="chip-btn" data-val="Property Consultant" onclick="selectChip(this,'btype')">Consultant</button>
-          </div>
-        </div>
-      </div>
-      <div class="form-footer">
-        <button class="btn btn-ghost" onclick="gotoSignupStep(0)">← Back</button>
-        <button class="btn btn-primary" onclick="signupStep1Next()">Continue →</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Step 2: Workspace / Domain -->
-  <div id="signup-2" class="form-wrap hidden">
-    <div class="form-card">
-      <div class="form-head">
-        <div class="form-head-title">Set up your workspace</div>
-        <div class="form-head-sub">Choose your unique workspace URL — this cannot be changed later</div>
-      </div>
-      <div class="form-body">
-        <div class="field">
-          <label>Workspace Subdomain *</label>
-          <div class="input-suffix">
-            <input class="input" id="f-subdomain" type="text" placeholder="yourcompany" oninput="onSubdomainInput()" />
-            <span class="suffix-text">.realesso.com</span>
-          </div>
-          <div class="subdomain-check hidden" id="subdomain-ok">✓ Available — https://<span id="subdomain-preview"></span>.realesso.com</div>
-          <div class="subdomain-check err hidden" id="subdomain-err">✗ <span id="subdomain-err-msg">Subdomain taken</span></div>
-          <div class="error-msg hidden" id="err-subdomain"></div>
-        </div>
-        <div class="field">
-          <label>Custom Domain (Optional — configure after signup)</label>
-          <input class="input" id="f-custom-domain" type="text" placeholder="crm.yourcompany.com" />
-          <div class="text-muted text-xs" style="margin-top:6px;">You can connect a custom domain from Settings after your workspace is created.</div>
-        </div>
-        <div class="field">
-          <label>Referral Code (Optional)</label>
-          <input class="input" id="f-referral" type="text" placeholder="e.g. PARTNER2024" />
-        </div>
-        <div id="workspace-preview-card" class="alert-bar info hidden" style="margin-top:4px;">
-          🌐 Your CRM will be live at: <strong class="mono" id="ws-preview-url"></strong>
-        </div>
-      </div>
-      <div class="form-footer">
-        <button class="btn btn-ghost" onclick="gotoSignupStep(1)">← Back</button>
-        <button class="btn btn-primary" id="btn-workspace-next" onclick="signupStep2Next()">Proceed to Payment →</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Step 3: Email / OTP Verification -->
-  <div id="signup-3" class="form-wrap hidden">
-    <div class="form-card">
-      <div class="form-head">
-        <div class="form-head-title">Verify your email</div>
-        <div class="form-head-sub">We sent a 6-digit code to <strong id="otp-email-display" class="text-emerald"></strong></div>
-      </div>
-      <div class="form-body" style="text-align:center;padding-top:40px;padding-bottom:40px;">
-        <div class="otp-row" id="otp-row">
-          <input class="otp-input" maxlength="1" oninput="otpMove(this,0)" onkeydown="otpBack(this,0)" />
-          <input class="otp-input" maxlength="1" oninput="otpMove(this,1)" onkeydown="otpBack(this,1)" />
-          <input class="otp-input" maxlength="1" oninput="otpMove(this,2)" onkeydown="otpBack(this,2)" />
-          <input class="otp-input" maxlength="1" oninput="otpMove(this,3)" onkeydown="otpBack(this,3)" />
-          <input class="otp-input" maxlength="1" oninput="otpMove(this,4)" onkeydown="otpBack(this,4)" />
-          <input class="otp-input" maxlength="1" oninput="otpMove(this,5)" onkeydown="otpBack(this,5)" />
-        </div>
-        <div id="otp-status" class="text-muted text-xs" style="margin-top:16px;margin-bottom:24px;">Didn't receive it? <a href="#" onclick="resendOtp()">Resend code</a> <span id="otp-timer" class="text-muted">(60s)</span></div>
-        <div class="alert-bar error hidden" id="otp-error">❌ Incorrect code. Please try again.</div>
-        <div class="alert-bar success hidden" id="otp-success">✅ Email verified! Redirecting to checkout...</div>
-      </div>
-      <div class="form-footer" style="justify-content:center;">
-        <button class="btn btn-primary btn-full" id="btn-verify-otp" onclick="verifyOtp()" style="max-width:300px;">Verify & Continue →</button>
+        <button class="btn-select-plan">Select Enterprise</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ═══ PAGE: CHECKOUT ════════════════════════════════════ -->
-<div id="page-checkout" class="page">
-  <div class="step-bar">
-    <div class="step-item done"><div class="step-node">✓</div><div class="step-label">Account</div></div>
-    <div class="step-item done"><div class="step-node">✓</div><div class="step-label">Workspace</div></div>
-    <div class="step-item active"><div class="step-node">3</div><div class="step-label">Payment</div></div>
-    <div class="step-item"><div class="step-node">4</div><div class="step-label">Launch</div></div>
+<!-- ===== SIGNUP PAGE ===== -->
+<div class="page" id="page-signup">
+  <div class="signup-container">
+    <!-- PROGRESS BAR -->
+    <div class="progress-bar">
+      <div class="prog-step">
+        <div class="prog-circle active" id="prog-0">1</div>
+        <div class="prog-label">Account</div>
+      </div>
+      <div class="prog-line" id="line-0"></div>
+      <div class="prog-step">
+        <div class="prog-circle" id="prog-1">2</div>
+        <div class="prog-label">Business</div>
+      </div>
+      <div class="prog-line" id="line-1"></div>
+      <div class="prog-step">
+        <div class="prog-circle" id="prog-2">3</div>
+        <div class="prog-label">Workspace</div>
+      </div>
+      <div class="prog-line" id="line-2"></div>
+      <div class="prog-step">
+        <div class="prog-circle" id="prog-3">4</div>
+        <div class="prog-label">Verify</div>
+      </div>
+      <div class="prog-line" id="line-3"></div>
+      <div class="prog-step">
+        <div class="prog-circle" id="prog-4">5</div>
+        <div class="prog-label">Review</div>
+      </div>
+    </div>
+
+    <!-- STEP 0: ACCOUNT -->
+    <div class="step-card" id="step-0">
+      <h2>Create your account</h2>
+      <p class="step-sub">Set up your personal login credentials.</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" id="s0-name" placeholder="Rahul Sharma"/>
+          <div class="field-error" id="err-s0-name">Please enter your full name.</div>
+        </div>
+        <div class="form-group">
+          <label>Company Name *</label>
+          <input type="text" id="s0-company" placeholder="Sharma Realty Pvt Ltd"/>
+          <div class="field-error" id="err-s0-company">Please enter your company name.</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Work Email *</label>
+        <input type="email" id="s0-email" placeholder="rahul@agency.com"/>
+        <div class="field-error" id="err-s0-email">Please enter a valid email address.</div>
+      </div>
+      <div class="form-group">
+        <label>Phone Number *</label>
+        <input type="tel" id="s0-phone" placeholder="9876543210" maxlength="10"/>
+        <div class="field-error" id="err-s0-phone">Enter a valid 10-digit Indian mobile number (starts with 6-9).</div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Password *</label>
+          <div style="position:relative">
+            <input type="password" id="s0-password" placeholder="Min 8 characters" style="padding-right:44px"/>
+            <button type="button" onclick="togglePw('s0-password','eye-pw')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--txt3);display:flex;align-items:center;padding:0">
+              <span class="material-icons-round" id="eye-pw" style="font-size:20px">visibility_off</span>
+            </button>
+          </div>
+          <div class="field-error" id="err-s0-password">8–32 chars, uppercase, lowercase, number &amp; special character required.</div>
+        </div>
+        <div class="form-group">
+          <label>Confirm Password *</label>
+          <div style="position:relative">
+            <input type="password" id="s0-confirm" placeholder="Repeat password" style="padding-right:44px"/>
+            <button type="button" onclick="togglePw('s0-confirm','eye-conf')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--txt3);display:flex;align-items:center;padding:0">
+              <span class="material-icons-round" id="eye-conf" style="font-size:20px">visibility_off</span>
+            </button>
+          </div>
+          <div class="field-error" id="err-s0-confirm">Passwords do not match.</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-weight:400;">
+          <input type="checkbox" id="s0-terms" style="width:auto;margin-top:2px;"/>
+          <span>I agree to the <a href="#" style="color:var(--accent);">Terms of Service</a> and <a href="#" style="color:var(--accent);">Privacy Policy</a> *</span>
+        </label>
+        <div class="field-error" id="err-s0-terms">You must accept the terms to continue.</div>
+      </div>
+      <div class="step-actions">
+        <button class="btn-next" onclick="nextStep(0)">Continue <span class="material-icons-round" style="font-size:16px;vertical-align:middle;">arrow_forward</span></button>
+      </div>
+    </div>
+
+    <!-- STEP 1: BUSINESS -->
+    <div class="step-card" id="step-1" style="display:none;">
+      <h2>Tell us about your business</h2>
+      <p class="step-sub">Help us personalise your Realesso experience.</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label>State *</label>
+          <select id="s1-state" onchange="populateSignupCities()">
+            <option value="">Select State</option>
+          </select>
+          <div class="field-error" id="err-s1-state">Please select a state.</div>
+        </div>
+        <div class="form-group">
+          <label>City *</label>
+          <select id="s1-city">
+            <option value="">Select City</option>
+          </select>
+          <div class="field-error" id="err-s1-city">Please select a city.</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Industry *</label>
+        <div class="chips-group" id="industry-chips">
+          <div class="chip" onclick="toggleChip(this,'industry')">Residential</div>
+          <div class="chip" onclick="toggleChip(this,'industry')">Commercial</div>
+          <div class="chip" onclick="toggleChip(this,'industry')">Plots & Land</div>
+          <div class="chip" onclick="toggleChip(this,'industry')">Luxury</div>
+          <div class="chip" onclick="toggleChip(this,'industry')">Affordable Housing</div>
+          <div class="chip" onclick="toggleChip(this,'industry')">Industrial</div>
+        </div>
+        <div class="field-error" id="err-industry">Please select at least one industry.</div>
+      </div>
+      <div class="form-group">
+        <label>Team Size *</label>
+        <div class="chips-group" id="size-chips">
+          <div class="chip" onclick="toggleChip(this,'size')">1-5</div>
+          <div class="chip" onclick="toggleChip(this,'size')">6-20</div>
+          <div class="chip" onclick="toggleChip(this,'size')">21-50</div>
+          <div class="chip" onclick="toggleChip(this,'size')">50+</div>
+        </div>
+        <div class="field-error" id="err-size">Please select your team size.</div>
+      </div>
+      <div class="step-actions">
+        <button class="btn-prev" onclick="prevStep(1)">Back</button>
+        <button class="btn-next" onclick="nextStep(1)">Continue <span class="material-icons-round" style="font-size:16px;vertical-align:middle;">arrow_forward</span></button>
+      </div>
+    </div>
+
+    <!-- STEP 2: WORKSPACE -->
+    <div class="step-card" id="step-2" style="display:none;">
+      <h2>Set up your workspace</h2>
+      <p class="step-sub">Choose your Realesso subdomain to get started.</p>
+      <div class="form-group">
+        <label>Subdomain *</label>
+        <div class="subdomain-row" id="subdomain-row">
+          <input type="text" id="s2-subdomain" placeholder="yourcompany" oninput="validateSubdomainLive()"/>
+          <div class="subdomain-suffix">.realesso.in</div>
+        </div>
+        <div class="field-error" id="err-s2-subdomain">Subdomain must be lowercase letters, numbers, or hyphens (min 3 chars).</div>
+      </div>
+      <div class="form-group" style="margin-top:24px;">
+        <label>Custom Domain <span class="badge-soon">Coming Soon</span></label>
+        <input type="text" placeholder="www.youragency.com" disabled/>
+        <div style="font-size:12px;color:var(--txt2);margin-top:6px;">Custom domain support is coming soon. You'll be notified when it's available.</div>
+      </div>
+      <div class="step-actions">
+        <button class="btn-prev" onclick="prevStep(2)">Back</button>
+        <button class="btn-next" onclick="nextStep(2)">Continue <span class="material-icons-round" style="font-size:16px;vertical-align:middle;">arrow_forward</span></button>
+      </div>
+    </div>
+
+    <!-- STEP 3: OTP VERIFICATION -->
+    <div class="step-card" id="step-3" style="display:none;">
+      <h2>Verify your email</h2>
+      <p class="step-sub">We've sent a 6-digit OTP to <strong id="otp-email-display" style="color:var(--accent)"></strong>. Enter it below to continue.</p>
+      <div style="display:flex;gap:10px;justify-content:center;margin:32px 0 8px">
+        <input class="otp-box" id="otp-0" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(this,0)" onkeydown="otpKey(event,0)" style="width:52px;height:60px;text-align:center;font-size:24px;font-weight:700;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--txt);outline:none;transition:border var(--transition)"/>
+        <input class="otp-box" id="otp-1" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(this,1)" onkeydown="otpKey(event,1)" style="width:52px;height:60px;text-align:center;font-size:24px;font-weight:700;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--txt);outline:none;transition:border var(--transition)"/>
+        <input class="otp-box" id="otp-2" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(this,2)" onkeydown="otpKey(event,2)" style="width:52px;height:60px;text-align:center;font-size:24px;font-weight:700;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--txt);outline:none;transition:border var(--transition)"/>
+        <input class="otp-box" id="otp-3" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(this,3)" onkeydown="otpKey(event,3)" style="width:52px;height:60px;text-align:center;font-size:24px;font-weight:700;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--txt);outline:none;transition:border var(--transition)"/>
+        <input class="otp-box" id="otp-4" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(this,4)" onkeydown="otpKey(event,4)" style="width:52px;height:60px;text-align:center;font-size:24px;font-weight:700;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--txt);outline:none;transition:border var(--transition)"/>
+        <input class="otp-box" id="otp-5" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(this,5)" onkeydown="otpKey(event,5)" style="width:52px;height:60px;text-align:center;font-size:24px;font-weight:700;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--txt);outline:none;transition:border var(--transition)"/>
+      </div>
+      <div class="field-error" id="err-otp" style="text-align:center;margin-bottom:12px">Incorrect OTP. Please try again.</div>
+      <div style="text-align:center;font-size:13px;color:var(--txt3);margin-bottom:24px">
+        Didn't receive it? <button type="button" onclick="resendOtp()" style="background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;font-weight:600;padding:0">Resend OTP</button>
+        <span id="otp-timer" style="color:var(--txt3);margin-left:4px"></span>
+      </div>
+      <div class="step-actions">
+        <button class="btn-prev" onclick="prevStep(3)">Back</button>
+        <button class="btn-next" id="btn-verify-otp" onclick="verifyOtp()">Verify &amp; Continue <span class="material-icons-round" style="font-size:16px;vertical-align:middle;">verified</span></button>
+      </div>
+    </div>
+
+    <!-- STEP 4: REVIEW -->
+    <div class="step-card" id="step-4" style="display:none;">
+      <h2>Review your details</h2>
+      <p class="step-sub">Everything look good? Proceed to checkout.</p>
+      <div class="review-section">
+        <h4>Account</h4>
+        <div class="review-row"><span class="lbl">Name</span><span class="val" id="rv-name">—</span></div>
+        <div class="review-row"><span class="lbl">Company</span><span class="val" id="rv-company">—</span></div>
+        <div class="review-row"><span class="lbl">Email</span><span class="val" id="rv-email">—</span></div>
+        <div class="review-row"><span class="lbl">Phone</span><span class="val" id="rv-phone">—</span></div>
+      </div>
+      <div class="review-section">
+        <h4>Business</h4>
+        <div class="review-row"><span class="lbl">Location</span><span class="val" id="rv-location">—</span></div>
+        <div class="review-row"><span class="lbl">Industry</span><span class="val" id="rv-industry">—</span></div>
+        <div class="review-row"><span class="lbl">Team Size</span><span class="val" id="rv-size">—</span></div>
+      </div>
+      <div class="review-section">
+        <h4>Workspace</h4>
+        <div class="review-row"><span class="lbl">Subdomain</span><span class="val" id="rv-subdomain">—</span></div>
+        <div class="review-row"><span class="lbl">Plan</span><span class="val" id="rv-plan">—</span></div>
+      </div>
+      <div class="step-actions">
+        <button class="btn-prev" onclick="prevStep(4)">Back</button>
+        <button class="btn-next" onclick="goToCheckout()">Proceed to Checkout <span class="material-icons-round" style="font-size:16px;vertical-align:middle;">payment</span></button>
+      </div>
+    </div>
   </div>
-  <div class="checkout-wrap">
-    <div class="checkout-main">
-      <!-- Billing info -->
-      <div class="section-card">
-        <div class="section-card-title">📋 Billing Information</div>
-        <div class="field field-row">
-          <div>
-            <label>Full Name *</label>
-            <input class="input" id="c-name" placeholder="As per bank records" />
-          </div>
-          <div>
-            <label>Email *</label>
-            <input class="input" id="c-email" type="email" placeholder="billing@company.com" />
-          </div>
-        </div>
-        <div class="field field-row">
-          <div>
-            <label>GST Number (Optional)</label>
-            <input class="input" id="c-gst" placeholder="22AAAAA0000A1Z5" />
-          </div>
-          <div>
-            <label>PAN (for amounts ≥₹50,000)</label>
-            <input class="input" id="c-pan" placeholder="ABCDE1234F" />
-          </div>
+</div>
+
+<!-- ===== CHECKOUT PAGE ===== -->
+<div class="page" id="page-checkout">
+  <div class="checkout-layout">
+    <div class="checkout-form-card">
+      <h2>Billing Details</h2>
+      <div class="form-group">
+        <label>Billing Name *</label>
+        <input type="text" id="co-name" placeholder="Rahul Sharma / Sharma Realty Pvt Ltd"/>
+        <div class="field-error" id="err-co-name">Please enter billing name.</div>
+      </div>
+      <div class="form-group">
+        <label>Billing Email *</label>
+        <input type="email" id="co-email" placeholder="billing@agency.com" oninput="updateOrderEmail()"/>
+        <div class="field-error" id="err-co-email">Please enter a valid email address.</div>
+      </div>
+      <div class="form-group">
+        <label>GST Number (optional)</label>
+        <input type="text" id="co-gst" placeholder="22AAAAA0000A1Z5"/>
+      </div>
+      <div class="form-group">
+        <label>PAN Number *</label>
+        <input type="text" id="co-pan" placeholder="ABCDE1234F" maxlength="10" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"/>
+        <div class="field-error" id="err-co-pan">PAN number is required (e.g. ABCDE1234F).</div>
+      </div>
+      <div style="background:var(--bg);border-radius:12px;padding:16px;border:1px solid var(--border);margin-top:8px;">
+        <div style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--txt2);">
+          <span class="material-icons-round" style="font-size:18px;color:var(--success);">lock</span>
+          Payments are secured by Razorpay. Your card details are never stored.
         </div>
       </div>
-
-      <!-- Payment method -->
-      <div class="section-card">
-        <div class="section-card-title">💳 Payment Method</div>
-        <div class="pay-tabs">
-          <button class="pay-tab active" onclick="setPayTab(this,'razorpay')">🔐 Razorpay (Secure)</button>
-          <button class="pay-tab" onclick="setPayTab(this,'upi')">📱 UPI</button>
-          <button class="pay-tab" onclick="setPayTab(this,'netbanking')">🏦 Net Banking</button>
-        </div>
-        <div id="pay-razorpay">
-          <div class="alert-bar info">
-            🔒 You'll be redirected to Razorpay's secure checkout page. Supports all cards, UPI, net banking and wallets.
-          </div>
-          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;">
-            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 24'%3E%3Crect fill='%231a73e8' width='80' height='24' rx='4'/%3E%3Ctext fill='white' x='40' y='16' text-anchor='middle' font-size='10' font-weight='bold'%3EVISA%3C/text%3E%3C/svg%3E" height="28" alt="Visa" style="border-radius:4px;" />
-            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 24'%3E%3Crect fill='%23eb001b' width='40' height='24' rx='4'/%3E%3Crect fill='%23f79e1b' x='40' width='40' height='24' rx='4'/%3E%3Ccircle cx='40' cy='12' r='8' fill='%23ff5f00'/%3E%3C/svg%3E" height="28" alt="Mastercard" style="border-radius:4px;" />
-            <span style="padding:4px 12px;background:var(--surface-2);border-radius:4px;font-size:12px;font-weight:700;color:var(--sky);">UPI</span>
-            <span style="padding:4px 12px;background:var(--surface-2);border-radius:4px;font-size:12px;font-weight:700;color:#ffb347;">GPay</span>
-            <span style="padding:4px 12px;background:var(--surface-2);border-radius:4px;font-size:12px;font-weight:700;color:#a78bfa;">PhonePe</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Coupon code -->
-      <div class="section-card">
-        <div class="section-card-title">🏷 Coupon Code</div>
-        <div style="display:flex;gap:10px;">
-          <input class="input" id="c-coupon" placeholder="Enter coupon code" style="flex:1;" />
-          <button class="btn btn-outline" onclick="applyCoupon()">Apply</button>
-        </div>
-        <div class="alert-bar success hidden" id="coupon-ok" style="margin-top:10px;">🎉 Coupon applied! 20% discount added.</div>
-        <div class="alert-bar error hidden" id="coupon-err" style="margin-top:10px;">❌ Invalid coupon code.</div>
-      </div>
-
-      <button class="btn btn-primary btn-primary-lg btn-full" id="btn-pay" onclick="initiatePayment()">
-        <span id="pay-btn-text">🔐 Pay Securely via Razorpay</span>
-        <span id="pay-btn-spinner" class="loading-spinner hidden"></span>
+      <button class="btn-pay" id="pay-btn" onclick="initiatePayment()">
+        <span id="pay-btn-text">Pay Now</span>
+        <span id="pay-spinner" style="display:none;" class="spinner"></span>
       </button>
-
-      <p class="text-muted text-xs" style="text-align:center;">
-        By completing payment you agree to our <a href="#">Terms</a>. 30-day money-back guarantee on all plans.
-      </p>
     </div>
-
-    <!-- Order summary sidebar -->
-    <div class="checkout-sidebar">
-      <div class="order-card">
-        <div class="order-title">📦 Order Summary</div>
-        <div class="order-plan">
-          <div class="order-plan-icon" id="order-icon">🚀</div>
-          <div>
-            <div class="order-plan-name" id="order-name">Growth Plan</div>
-            <div class="order-plan-sub" id="order-cycle">Billed Yearly</div>
-          </div>
-        </div>
-        <div class="order-line"><span>Base price</span><strong id="order-base">₹1,49,990</strong></div>
-        <div class="order-line" id="discount-line" style="display:none;"><span>Discount (20%)</span><strong id="order-discount" style="color:var(--emerald);">–₹29,998</strong></div>
-        <div class="order-line"><span>GST (18%)</span><strong id="order-gst">₹26,998</strong></div>
-        <hr class="order-divider" />
-        <div class="order-total"><span>Total Due</span><span class="order-total-amount" id="order-total">₹1,76,988</span></div>
-        <hr class="order-divider" />
-        <div style="font-size:12px;color:var(--text-3);line-height:1.7;">
-          <div>📅 Next billing: <span id="order-next-billing">—</span></div>
-          <div>🔄 Auto-renews until cancelled</div>
-        </div>
-        <div class="security-badges">
-          <div class="security-badge">🔒 256-bit SSL encrypted</div>
-          <div class="security-badge">💰 30-day money-back guarantee</div>
-          <div class="security-badge">🛡 PCI DSS compliant</div>
-          <div class="security-badge">📧 Instant activation email</div>
-        </div>
+    <div class="order-summary">
+      <h3>Order Summary</h3>
+      <div class="order-line"><span>Plan</span><span id="os-plan">Growth</span></div>
+      <div class="order-line"><span>Billing</span><span id="os-billing">Monthly</span></div>
+      <div class="order-line"><span>Subtotal</span><span id="os-subtotal">₹7,999</span></div>
+      <div class="order-line"><span>GST (18%)</span><span id="os-gst">₹1,440</span></div>
+      <div class="order-total"><span>Total</span><span id="os-total">₹9,439</span></div>
+      <div style="margin-top:16px;font-size:12px;color:var(--txt2);line-height:1.6;">
+        <span class="material-icons-round" style="font-size:14px;vertical-align:middle;">info</span>
+        14-day free trial included. You won't be charged until the trial ends.
       </div>
     </div>
   </div>
 </div>
 
-<!-- ═══ PAGE: SUCCESS ══════════════════════════════════════ -->
-<div id="page-success" class="page">
-  <div class="success-wrap">
-    <div class="success-ring"><span class="success-checkmark">🎉</span></div>
-    <h1 class="success-title">You're all set, <em id="success-name">Rajesh</em>!</h1>
-    <p class="success-sub">
-      Your <strong>Realesso CRM workspace</strong> is being set up.<br />
-      You'll receive login credentials at <strong class="text-emerald" id="success-email">owner@company.com</strong> within 5 minutes.
-    </p>
-    <div class="workspace-url-card">
-      <div class="url-label">Your Workspace URL</div>
-      <div class="url-value">
-        <span class="text-emerald mono" id="success-url">https://skyline.realesso.com</span>
-        <button class="copy-btn" onclick="copyUrl()">📋 Copy</button>
-      </div>
+<!-- ===== SUCCESS PAGE ===== -->
+<div class="page" id="page-success">
+  <div class="success-container">
+    <div class="success-icon">
+      <span class="material-icons-round" style="font-size:40px;">check_circle</span>
     </div>
-    <div class="next-steps">
-      <div class="next-step-card"><div class="next-step-icon">🏗</div><div class="next-step-title">Add your first project</div><div class="next-step-desc">Set up towers, floors and units in under 5 minutes</div></div>
-      <div class="next-step-card"><div class="next-step-icon">👥</div><div class="next-step-title">Invite your team</div><div class="next-step-desc">Add agents, managers and finance staff</div></div>
-      <div class="next-step-card"><div class="next-step-icon">🎯</div><div class="next-step-title">Import your leads</div><div class="next-step-desc">Upload existing leads from Excel in seconds</div></div>
-      <div class="next-step-card"><div class="next-step-icon">📱</div><div class="next-step-title">Get the mobile app</div><div class="next-step-desc">Stay on top of leads from your phone</div></div>
+    <h1>You're all set!</h1>
+    <p>Your Realesso workspace is being created. You'll receive a confirmation email shortly with your login details.</p>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:28px;text-align:left;">
+      <div style="font-size:13px;color:var(--txt2);margin-bottom:8px;">Your workspace URL</div>
+      <div style="font-size:16px;font-weight:600;color:var(--accent);" id="success-url">yourcompany.realesso.in</div>
     </div>
-    <div class="success-actions">
-      <button class="btn btn-primary btn-primary-lg" onclick="showPage('wizard')">🚀 Launch My CRM</button>
-      <button class="btn btn-ghost" onclick="copyUrl()">📋 Copy URL</button>
-    </div>
+    <button class="btn-next" onclick="window.location.href='realesso_marketing_website.html'" style="display:inline-flex;align-items:center;gap:8px;padding:13px 32px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer;">
+      Go to Dashboard <span class="material-icons-round" style="font-size:16px;">arrow_forward</span>
+    </button>
   </div>
 </div>
-
-<!-- ═══ PAGE: FIRST-LOGIN WIZARD ══════════════════════════ -->
-<div id="page-wizard" class="page">
-  <div class="wizard-wrap">
-    <div class="wizard-head">
-      <h1 style="font-family:var(--font-serif);font-size:2rem;margin-bottom:8px;">Welcome to Realesso 👋</h1>
-      <p class="text-muted">Let's set up your workspace in 4 quick steps</p>
-    </div>
-    <div class="wizard-steps">
-      <div class="wstep active" id="wstep-0"><div class="wstep-num">1</div><div class="wstep-label">Profile</div></div>
-      <div class="wstep-sep"></div>
-      <div class="wstep" id="wstep-1"><div class="wstep-num">2</div><div class="wstep-label">Logo</div></div>
-      <div class="wstep-sep"></div>
-      <div class="wstep" id="wstep-2"><div class="wstep-num">3</div><div class="wstep-label">Project</div></div>
-      <div class="wstep-sep"></div>
-      <div class="wstep" id="wstep-3"><div class="wstep-num">4</div><div class="wstep-label">Team</div></div>
-    </div>
-
-    <!-- Wizard step 0: Company profile -->
-    <div id="wiz-0" class="form-card">
-      <div class="form-head">
-        <div class="form-head-title">Company Profile</div>
-        <div class="form-head-sub">This appears on receipts, agreements and customer emails</div>
-      </div>
-      <div class="form-body">
-        <div class="field field-row">
-          <div><label>Support Email</label><input class="input" placeholder="support@yourcompany.com" /></div>
-          <div><label>Support Phone</label><input class="input" placeholder="+91 98765 43210" /></div>
-        </div>
-        <div class="field field-row">
-          <div><label>GST Number</label><input class="input" placeholder="22AAAAA0000A1Z5" /></div>
-          <div><label>RERA Number</label><input class="input" placeholder="MH/RERA/xxxx" /></div>
-        </div>
-        <div class="field"><label>Company Address</label><textarea class="input" rows="2" placeholder="Head office address..." style="resize:vertical;"></textarea></div>
-        <div class="field field-row-3">
-          <div><label>City</label><input class="input" placeholder="Mumbai" /></div>
-          <div><label>State</label><input class="input" placeholder="Maharashtra" /></div>
-          <div><label>Pincode</label><input class="input" placeholder="400001" /></div>
-        </div>
-      </div>
-      <div class="form-footer">
-        <span class="text-muted text-xs">Step 1 of 4</span>
-        <button class="btn btn-primary" onclick="gotoWizStep(1)">Continue →</button>
-      </div>
-    </div>
-
-    <!-- Wizard step 1: Logo -->
-    <div id="wiz-1" class="form-card hidden">
-      <div class="form-head">
-        <div class="form-head-title">Upload Company Logo</div>
-        <div class="form-head-sub">Shown on receipts, agreements, email headers and app navbar</div>
-      </div>
-      <div class="form-body">
-        <div class="upload-zone" id="logo-zone" onclick="document.getElementById('logo-file').click()" ondrop="handleLogoDrop(event)" ondragover="event.preventDefault()">
-          <div id="logo-preview-wrap">
-            <div class="upload-icon">🖼</div>
-            <div style="font-weight:700;margin-bottom:8px;">Drag & drop or click to upload</div>
-            <div class="upload-hint">PNG or SVG recommended · Min 200×200px · Max 2MB</div>
-          </div>
-          <img id="logo-img-preview" src="" style="max-height:100px;display:none;border-radius:8px;" />
-        </div>
-        <input type="file" id="logo-file" accept="image/*" style="display:none;" onchange="previewLogo(this)" />
-        <div class="alert-bar info" style="margin-top:16px;">💡 A transparent PNG logo works best on both light and dark backgrounds</div>
-      </div>
-      <div class="form-footer">
-        <button class="btn btn-ghost" onclick="gotoWizStep(0)">← Back</button>
-        <div style="display:flex;gap:10px;">
-          <button class="btn btn-ghost" onclick="gotoWizStep(2)">Skip for now</button>
-          <button class="btn btn-primary" onclick="gotoWizStep(2)">Save & Continue →</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Wizard step 2: First project -->
-    <div id="wiz-2" class="form-card hidden">
-      <div class="form-head">
-        <div class="form-head-title">Add your first project</div>
-        <div class="form-head-sub">You can add unlimited projects later. Let's start with one.</div>
-      </div>
-      <div class="form-body">
-        <div class="field field-row">
-          <div><label>Project Name *</label><input class="input" id="proj-name" placeholder="Sunrise Heights" /></div>
-          <div><label>RERA Number</label><input class="input" placeholder="MH/RERA/xxxx/2024" /></div>
-        </div>
-        <div class="field field-row">
-          <div><label>City</label><input class="input" placeholder="Pune" /></div>
-          <div><label>Project Type</label>
-            <select class="input" style="background:var(--surface-2);">
-              <option>Residential Apartments</option>
-              <option>Villas</option>
-              <option>Plotted Development</option>
-              <option>Commercial</option>
-              <option>Mixed Use</option>
-            </select>
-          </div>
-        </div>
-        <div class="field field-row">
-          <div><label>Total Units</label><input class="input" type="number" placeholder="250" /></div>
-          <div><label>Possession Date</label><input class="input" type="date" /></div>
-        </div>
-      </div>
-      <div class="form-footer">
-        <button class="btn btn-ghost" onclick="gotoWizStep(1)">← Back</button>
-        <div style="display:flex;gap:10px;">
-          <button class="btn btn-ghost" onclick="gotoWizStep(3)">Skip for now</button>
-          <button class="btn btn-primary" onclick="gotoWizStep(3)">Save Project →</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Wizard step 3: Invite team -->
-    <div id="wiz-3" class="form-card hidden">
-      <div class="form-head">
-        <div class="form-head-title">Invite your team</div>
-        <div class="form-head-sub">Add teammates now or later from Users & Permissions</div>
-      </div>
-      <div class="form-body">
-        <div id="invite-rows">
-          <div class="invite-row">
-            <input class="input" type="email" placeholder="agent@company.com" />
-            <select class="role-select">
-              <option>Agent</option>
-              <option>Sales Manager</option>
-              <option>Finance</option>
-              <option>HR</option>
-              <option>Admin</option>
-            </select>
-            <button class="btn btn-ghost" onclick="this.closest('.invite-row').remove()">✕</button>
-          </div>
-        </div>
-        <button class="btn btn-ghost" style="margin-top:10px;" onclick="addInviteRow()">+ Add Another</button>
-
-        <div style="margin-top:28px;">
-          <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);margin-bottom:14px;">🎯 Setup Checklist</div>
-          <div class="checklist">
-            <div class="check-item done" id="chk-profile"><div class="check-icon">🏢</div><div class="check-text">Company profile configured</div><div class="check-status">Done ✓</div></div>
-            <div class="check-item done" id="chk-logo"><div class="check-icon">🖼</div><div class="check-text">Logo uploaded</div><div class="check-status">Done ✓</div></div>
-            <div class="check-item done" id="chk-project"><div class="check-icon">🏗</div><div class="check-text">First project created</div><div class="check-status">Done ✓</div></div>
-            <div class="check-item" id="chk-team"><div class="check-icon">👥</div><div class="check-text">Team members invited</div><div class="check-status">Pending</div></div>
-          </div>
-        </div>
-      </div>
-      <div class="form-footer">
-        <button class="btn btn-ghost" onclick="gotoWizStep(2)">← Back</button>
-        <button class="btn btn-primary btn-primary-lg" onclick="finishWizard()">🚀 Launch My Dashboard</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<style>
-.chip-btn {
-  padding:8px 16px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--radius-sm);
-  color:var(--text-2);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;font-family:var(--font-sans);
-}
-.chip-btn:hover { border-color:var(--border-light);color:var(--text-1); }
-.chip-btn.selected { background:rgba(0,230,118,.12);border-color:var(--emerald);color:var(--emerald); }
-</style>
 
 <script>
-// ─── State ──────────────────────────────────────────────────────────────────
-const state = {
-  plan: 'growth',
-  billing: 'yearly',
-  formData: {},
-  otpTimer: null,
-  subdomainTimeout: null,
-  couponApplied: false,
-  couponDiscount: 0,
+// ===== DATA =====
+const STATES = {
+  'Maharashtra': ['Mumbai','Pune','Nagpur','Nashik','Aurangabad'],
+  'Karnataka': ['Bengaluru','Mysuru','Hubli','Mangaluru','Belagavi'],
+  'Tamil Nadu': ['Chennai','Coimbatore','Madurai','Salem','Tiruchirappalli'],
+  'Delhi': ['New Delhi','Dwarka','Rohini','Janakpuri','Saket'],
+  'Gujarat': ['Ahmedabad','Surat','Vadodara','Rajkot','Gandhinagar'],
+  'Rajasthan': ['Jaipur','Jodhpur','Udaipur','Kota','Ajmer'],
+  'Uttar Pradesh': ['Lucknow','Noida','Agra','Kanpur','Varanasi'],
+  'Telangana': ['Hyderabad','Warangal','Nizamabad','Karimnagar'],
+  'West Bengal': ['Kolkata','Howrah','Durgapur','Asansol'],
+  'Punjab': ['Chandigarh','Ludhiana','Amritsar','Jalandhar'],
+  'Haryana': ['Gurugram','Faridabad','Ambala','Hisar'],
+  'Madhya Pradesh': ['Bhopal','Indore','Jabalpur','Gwalior'],
 };
 
-const PLANS = {
-  starter:    { name:'Starter',    icon:'🌱', monthly:4999,   yearly:49990  },
-  growth:     { name:'Growth',     icon:'🚀', monthly:14999,  yearly:149990 },
-  enterprise: { name:'Enterprise', icon:'🏆', monthly:39999,  yearly:399990 },
+const PLAN_PRICES = {
+  starter:    { monthly: 2999,  yearly: 2399  },
+  growth:     { monthly: 7999,  yearly: 6399  },
+  enterprise: { monthly: 19999, yearly: 15999 },
 };
+const PLAN_LABELS = { starter: 'Starter', growth: 'Growth', enterprise: 'Enterprise' };
 
-// ─── Page navigation ────────────────────────────────────────────────────────
-function showPage(p) {
-  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
-  document.getElementById('page-' + p).classList.add('active');
-  window.scrollTo(0, 0);
+// ===== STATE =====
+let currentPage = 'plans';
+let currentStep = 0;
+let selectedPlan = 'growth';
+let isYearly = false;
+
+// ===== THEME =====
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const icon = document.getElementById('theme-icon');
+  if (icon) icon.textContent = theme === 'dark' ? 'dark_mode' : 'light_mode';
+  localStorage.setItem('realesso-theme', theme);
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+(function initTheme() {
+  const saved = localStorage.getItem('realesso-theme') || 'light';
+  applyTheme(saved);
+})();
+
+// ===== PAGE NAVIGATION =====
+const PAGES = ['plans','signup','checkout','success'];
+function showPage(page) {
+  PAGES.forEach(p => {
+    const el = document.getElementById('page-' + p);
+    if (el) el.classList.toggle('active', p === page);
+  });
+  currentPage = page;
+  window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
-// ─── Plan selection ──────────────────────────────────────────────────────────
+function handleBack() {
+  if (currentPage === 'plans') {
+    window.location.href = 'realesso_marketing_website.html';
+  } else if (currentPage === 'signup') {
+    if (currentStep === 0) showPage('plans');
+    else prevStep(currentStep);
+  } else if (currentPage === 'checkout') {
+    showPage('signup');
+    showStep(4);
+  } else {
+    window.location.href = 'realesso_marketing_website.html';
+  }
+}
+
+// ===== PLAN SELECTION =====
 function selectPlan(plan) {
-  state.plan = plan;
-  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
-  document.getElementById('card-' + plan).classList.add('selected');
+  selectedPlan = plan;
+  ['starter','growth','enterprise'].forEach(p => {
+    const card = document.getElementById('plan-card-' + p);
+    if (card) card.classList.toggle('selected', p === plan);
+  });
   showPage('signup');
-  gotoSignupStep(0);
-  document.getElementById('chosen-plan-label').textContent = PLANS[plan].name + ' Plan';
+  showStep(0);
   updateOrderSummary();
 }
 
-// ─── Billing toggle ──────────────────────────────────────────────────────────
+// ===== BILLING TOGGLE =====
 function toggleBilling() {
-  setBilling(state.billing === 'monthly' ? 'yearly' : 'monthly');
-}
-function setBilling(cycle) {
-  state.billing = cycle;
-  const tog = document.getElementById('billing-toggle');
-  tog.classList.toggle('monthly', cycle === 'monthly');
-  document.getElementById('lbl-monthly').classList.toggle('active', cycle === 'monthly');
-  document.getElementById('lbl-yearly').classList.toggle('active', cycle === 'yearly');
-  ['starter','growth','enterprise'].forEach(p => {
-    const plan = PLANS[p];
-    const price = cycle === 'monthly' ? plan.monthly : Math.round(plan.yearly / 12);
-    document.getElementById('price-' + p).textContent = '₹' + price.toLocaleString('en-IN');
-    document.getElementById('annual-' + p).textContent = cycle === 'yearly'
-      ? `Billed ₹${plan.yearly.toLocaleString('en-IN')}/year — save ${Math.round((1-plan.yearly/(plan.monthly*12))*100)}%`
-      : '';
+  isYearly = !isYearly;
+  const track = document.getElementById('billing-toggle');
+  if (track) track.classList.toggle('on', isYearly);
+  const suffix = isYearly ? '/mo' : '/mo';
+  const key = isYearly ? 'yearly' : 'monthly';
+  Object.keys(PLAN_PRICES).forEach(plan => {
+    const el = document.getElementById('pp-' + plan);
+    const price = PLAN_PRICES[plan][key];
+    if (el) el.innerHTML = '₹' + price.toLocaleString('en-IN') + '<span>' + suffix + (isYearly ? ' (billed yearly)' : '') + '</span>';
   });
   updateOrderSummary();
 }
 
-// ─── Order summary ───────────────────────────────────────────────────────────
-function updateOrderSummary() {
-  const plan = PLANS[state.plan];
-  const isYearly = state.billing === 'yearly';
-  const base = isYearly ? plan.yearly : plan.monthly;
-  const after = state.couponApplied ? Math.round(base * (1 - state.couponDiscount)) : base;
-  const gst = Math.round(after * 0.18);
-  const total = after + gst;
-
-  document.getElementById('order-icon').textContent = plan.icon;
-  document.getElementById('order-name').textContent = plan.name + ' Plan';
-  document.getElementById('order-cycle').textContent = isYearly ? 'Billed Yearly' : 'Billed Monthly';
-  document.getElementById('order-base').textContent = '₹' + base.toLocaleString('en-IN');
-  document.getElementById('order-gst').textContent = '₹' + gst.toLocaleString('en-IN');
-  document.getElementById('order-total').textContent = '₹' + total.toLocaleString('en-IN');
-
-  const nextBill = new Date();
-  nextBill.setMonth(nextBill.getMonth() + (isYearly ? 12 : 1));
-  document.getElementById('order-next-billing').textContent = nextBill.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'});
-}
-
-// ─── Chip selectors ──────────────────────────────────────────────────────────
-const chipState = { industry:'', size:'', users:'', btype:'' };
-function selectChip(el, group) {
-  document.querySelectorAll(`#${group}-chips .chip-btn`).forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
-  chipState[group] = el.dataset.val;
-  document.getElementById('err-' + (group === 'btype' ? 'btype' : group))?.classList.add('hidden');
-}
-
-// ─── Auto-generate subdomain ─────────────────────────────────────────────────
-function onCompanyInput() {
-  clearErr('f-company');
-  const val = document.getElementById('f-company').value;
-  const slug = val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30);
-  document.getElementById('f-subdomain').value = slug;
-  if (slug) checkSubdomainAvailability(slug);
-  updateWorkspacePreview(slug);
-}
-function onSubdomainInput() {
-  const val = document.getElementById('f-subdomain').value.toLowerCase().replace(/[^a-z0-9-]+/g,'').replace(/^-|-$/g,'');
-  document.getElementById('f-subdomain').value = val;
-  clearTimeout(state.subdomainTimeout);
-  state.subdomainTimeout = setTimeout(() => checkSubdomainAvailability(val), 500);
-  updateWorkspacePreview(val);
-}
-function updateWorkspacePreview(slug) {
-  if (!slug) return;
-  document.getElementById('ws-preview-url').textContent = `https://${slug}.realesso.com`;
-  document.getElementById('workspace-preview-card').classList.remove('hidden');
-}
-
-async function checkSubdomainAvailability(slug) {
-  if (!slug || slug.length < 3) return;
-  try {
-    const res = await fetch('/api/v1/onboarding/check-subdomain', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subdomain: slug })
-    });
-    const resData = await res.json();
-    const ok = resData?.data?.available ?? false;
-    document.getElementById('subdomain-ok').classList.toggle('hidden', !ok);
-    document.getElementById('subdomain-err').classList.toggle('hidden', ok);
-    document.getElementById('subdomain-preview').textContent = slug;
-    
-    // Disable next button if taken
-    document.getElementById('btn-workspace-next').disabled = !ok;
-  } catch (err) {
-    console.error('Subdomain check failed', err);
-  }
-}
-
-// ─── Password strength ────────────────────────────────────────────────────────
-function checkPassword() {
-  const pw = document.getElementById('f-password').value;
-  let score = 0;
-  if (pw.length >= 8) score++;
-  if (/[A-Z]/.test(pw)) score++;
-  if (/[0-9]/.test(pw)) score++;
-  if (/[^A-Za-z0-9]/.test(pw)) score++;
-  const labels = ['Too weak','Weak','Fair','Good','Strong'];
-  for (let i = 0; i < 4; i++) {
-    const bar = document.getElementById('pwb' + i);
-    bar.className = 'pw-bar' + (i < score ? ` filled-${score}` : '');
-  }
-  document.getElementById('pw-label').textContent = labels[score] || 'Too weak';
-}
-
-// ─── Signup navigation ────────────────────────────────────────────────────────
-function gotoSignupStep(step) {
-  for (let i = 0; i <= 3; i++) {
-    document.getElementById('signup-' + i)?.classList.add('hidden');
-    const bar = document.getElementById('sbar-' + i);
-    if (!bar) continue;
-    bar.classList.remove('active', 'done');
-    if (i < step) bar.classList.add('done'), (bar.querySelector('.step-node').textContent = '✓');
-    else if (i === step) bar.classList.add('active');
-    else bar.querySelector('.step-node').textContent = i + 1;
-  }
-  document.getElementById('signup-' + step)?.classList.remove('hidden');
-  window.scrollTo(0, 0);
-}
-
-function showErr(id, msg) { const el = document.getElementById('err-' + id); if (el) { el.textContent = msg; el.classList.remove('hidden'); } }
-function clearErr(id) { document.getElementById('err-' + id)?.classList.add('hidden'); const inp = document.getElementById('f-' + id) || document.getElementById('c-' + id); if (inp) inp.classList.remove('error'); }
-
-function signupStep0Next() {
-  let ok = true;
-  const ownerName = document.getElementById('f-owner').value.trim();
-  const companyName = document.getElementById('f-company').value.trim();
-  const email = document.getElementById('f-email').value.trim();
-  const phone = document.getElementById('f-phone').value.trim();
-  const password = document.getElementById('f-password').value;
-  const conf = document.getElementById('f-confirm').value;
-  const terms = document.getElementById('f-terms').checked;
-  
-  if (!ownerName) { showErr('owner', 'Name is required'); ok = false; }
-  if (!companyName) { showErr('company', 'Company name is required'); ok = false; }
-  if (!email.match(/^[^@]+@[^@]+\.[^@]+$/)) { showErr('email', 'Valid email required'); ok = false; }
-  if (!phone.match(/^\d{10}$/)) { showErr('phone', 'Enter valid 10-digit mobile number'); ok = false; }
-  if (password.length < 8) { showErr('password', 'Password must be at least 8 characters'); ok = false; }
-  if (password !== conf) { showErr('confirm', 'Passwords do not match'); ok = false; }
-  if (!terms) { showErr('terms', 'You must accept the Terms of Service'); ok = false; }
-  
-  if (ok) {
-    state.formData = { ownerName, companyName, email, phone, password };
-    gotoSignupStep(1);
-  }
-}
-
-function signupStep1Next() {
-  let ok = true;
-  if (!chipState.industry) { showErr('industry', 'Please select an industry type'); ok = false; }
-  if (!chipState.size) { showErr('size', 'Please select company size'); ok = false; }
-  if (ok) gotoSignupStep(2);
-}
-
-async function signupStep2Next() {
-  const sub = document.getElementById('f-subdomain').value.trim();
-  if (!sub || sub.length < 3) { showErr('subdomain', 'Subdomain must be at least 3 characters'); return; }
-  
-  state.formData.subdomain = sub;
-  state.formData.plan = state.plan;
-  state.formData.billingCycle = state.billing;
-
-  try {
-    const res = await fetch('/api/v1/onboarding/signup-init', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(state.formData)
-    });
-    
-    if (!res.ok) {
-      const resData = await res.json();
-      // Assuming the API returns { success: false, message: "Error message" } on !res.ok
-      throw new Error(resData.message || 'Signup initialization failed');
+// ===== STEP MANAGEMENT =====
+function showStep(step) {
+  for (let i = 0; i < 5; i++) {
+    const el = document.getElementById('step-' + i);
+    if (el) el.style.display = i === step ? 'block' : 'none';
+    const circle = document.getElementById('prog-' + i);
+    if (circle) {
+      circle.classList.remove('active','done');
+      if (i < step) { circle.classList.add('done'); circle.innerHTML = '<span class="material-icons-round" style="font-size:16px;">check</span>'; }
+      else if (i === step) { circle.classList.add('active'); circle.textContent = i + 1; }
+      else { circle.textContent = i + 1; }
     }
-    
-    document.getElementById('otp-email-display').textContent = state.formData.email;
-    gotoSignupStep(3);
-    startOtpTimer();
-  } catch (err) {
-    alert('Error: ' + err.message);
+    if (i < 4) {
+      const line = document.getElementById('line-' + i);
+      if (line) line.classList.toggle('done', i < step);
+    }
+  }
+  currentStep = step;
+}
+
+// ===== VALIDATION =====
+const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const phoneRe = /^[6-9]\d{9}$/;
+const subdomainRe = /^[a-z0-9][a-z0-9-]{2,}$/;
+const panRe = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+// Password: 8-32 chars, uppercase, lowercase, digit, special
+function validatePassword(v) {
+  return v.length >= 8 && v.length <= 32 &&
+    /[A-Z]/.test(v) && /[a-z]/.test(v) &&
+    /\d/.test(v) && /[!@#$%^&*()\,.?":{}|<>_\-]/.test(v);
+}
+// ── Eye toggle ──
+function togglePw(inputId, iconId) {
+  const inp = document.getElementById(inputId);
+  const ico = document.getElementById(iconId);
+  if (!inp || !ico) return;
+  if (inp.type === 'password') { inp.type = 'text'; ico.textContent = 'visibility'; }
+  else { inp.type = 'password'; ico.textContent = 'visibility_off'; }
+}
+
+function showErr(id, show) { const el = document.getElementById(id); if (el) el.classList.toggle('show', show); }
+function markField(id, hasError) { const el = document.getElementById(id); if (el) el.classList.toggle('error', hasError); }
+function vf(id, errId, check) {
+  const el = document.getElementById(id);
+  const val = el ? el.value.trim() : '';
+  const ok = check(val);
+  markField(id, !ok); showErr(errId, !ok);
+  return ok;
+}
+
+function validateStep0() {
+  let ok = true;
+  ok &= vf('s0-name','err-s0-name', v => v.length > 0);
+  ok &= vf('s0-company','err-s0-company', v => v.length > 0);
+  ok &= vf('s0-email','err-s0-email', v => emailRe.test(v));
+  ok &= vf('s0-phone','err-s0-phone', v => phoneRe.test(v));
+  const pwd = document.getElementById('s0-password').value;
+  const pwdOk = validatePassword(pwd);
+  markField('s0-password', !pwdOk); showErr('err-s0-password', !pwdOk);
+  if (!pwdOk) ok = false;
+  const conf = document.getElementById('s0-confirm').value;
+  const confOk = conf === pwd && conf.length > 0;
+  markField('s0-confirm', !confOk); showErr('err-s0-confirm', !confOk);
+  if (!confOk) ok = false;
+  const terms = document.getElementById('s0-terms').checked;
+  showErr('err-s0-terms', !terms);
+  if (!terms) ok = false;
+  return !!ok;
+}
+
+function validateStep1() {
+  let ok = true;
+  ok &= vf('s1-state','err-s1-state', v => v.length > 0);
+  ok &= vf('s1-city','err-s1-city', v => v.length > 0);
+  const industrySelected = document.querySelectorAll('#industry-chips .chip.selected').length > 0;
+  showErr('err-industry', !industrySelected);
+  if (!industrySelected) ok = false;
+  const sizeSelected = document.querySelectorAll('#size-chips .chip.selected').length > 0;
+  showErr('err-size', !sizeSelected);
+  if (!sizeSelected) ok = false;
+  return !!ok;
+}
+
+function validateStep2() {
+  const val = document.getElementById('s2-subdomain').value.trim();
+  const ok = subdomainRe.test(val);
+  const row = document.getElementById('subdomain-row');
+  if (row) row.style.borderColor = ok ? '' : 'var(--error)';
+  showErr('err-s2-subdomain', !ok);
+  return ok;
+}
+
+function validateSubdomainLive() {
+  const val = document.getElementById('s2-subdomain').value.trim();
+  const ok = subdomainRe.test(val) || val.length === 0;
+  const row = document.getElementById('subdomain-row');
+  if (row) row.style.borderColor = ok ? '' : 'var(--error)';
+}
+
+function nextStep(step) {
+  let valid = false;
+  if (step === 0) valid = validateStep0();
+  else if (step === 1) valid = validateStep1();
+  else if (step === 2) valid = validateStep2();
+  else if (step === 3) { verifyOtp(); return; } // OTP step handles its own advance
+  if (!valid) return;
+  if (step < 4) {
+    showStep(step + 1);
+    if (step + 1 === 3) startOtpFlow(); // entering OTP step
+    if (step + 1 === 4) populateReview();
   }
 }
 
-// ─── OTP ─────────────────────────────────────────────────────────────────────
-function otpMove(input, idx) {
-  const inputs = document.querySelectorAll('.otp-input');
-  if (input.value && idx < 5) inputs[idx + 1].focus();
+function prevStep(step) {
+  if (step > 0) showStep(step - 1);
 }
-function otpBack(input, idx) {
-  const inputs = document.querySelectorAll('.otp-input');
-  if (event.key === 'Backspace' && !input.value && idx > 0) inputs[idx - 1].focus();
+
+// ===== OTP =====
+let otpTimerInterval = null;
+let generatedOtp = '';
+
+function startOtpFlow() {
+  // Show the email in the OTP screen
+  const email = document.getElementById('s0-email').value.trim();
+  const disp = document.getElementById('otp-email-display');
+  if (disp) disp.textContent = email;
+  // Clear previous inputs
+  for (let i = 0; i < 6; i++) {
+    const box = document.getElementById('otp-' + i);
+    if (box) { box.value = ''; box.style.borderColor = ''; }
+  }
+  showErr('err-otp', false);
+  // Generate a demo OTP (in production this would be sent via API)
+  generatedOtp = String(Math.floor(100000 + Math.random() * 900000));
+  console.info('Demo OTP (dev only):', generatedOtp); // visible in console for testing
+  startOtpTimer();
+  setTimeout(() => { const b = document.getElementById('otp-0'); if (b) b.focus(); }, 100);
 }
+
 function startOtpTimer() {
-  let seconds = 60;
-  clearInterval(state.otpTimer);
-  state.otpTimer = setInterval(() => {
-    seconds--;
-    document.getElementById('otp-timer').textContent = `(${seconds}s)`;
-    if (seconds <= 0) { clearInterval(state.otpTimer); document.getElementById('otp-timer').textContent = ''; }
+  clearInterval(otpTimerInterval);
+  let secs = 60;
+  const timerEl = document.getElementById('otp-timer');
+  if (timerEl) timerEl.textContent = '(resend in ' + secs + 's)';
+  otpTimerInterval = setInterval(() => {
+    secs--;
+    if (timerEl) timerEl.textContent = secs > 0 ? '(resend in ' + secs + 's)' : '';
+    if (secs <= 0) clearInterval(otpTimerInterval);
   }, 1000);
 }
 
-async function resendOtp() {
-  try {
-    await fetch('/api/v1/onboarding/signup-init', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(state.formData)
-    });
-    startOtpTimer();
-  } catch (err) {
-    console.error('Resend OTP failed', err);
+function resendOtp() {
+  generatedOtp = String(Math.floor(100000 + Math.random() * 900000));
+  console.info('Demo OTP (resent):', generatedOtp);
+  for (let i = 0; i < 6; i++) {
+    const box = document.getElementById('otp-' + i);
+    if (box) { box.value = ''; box.style.borderColor = ''; }
   }
+  showErr('err-otp', false);
+  startOtpTimer();
+  setTimeout(() => { const b = document.getElementById('otp-0'); if (b) b.focus(); }, 50);
 }
 
-async function verifyOtp() {
-  const inputs = document.querySelectorAll('.otp-input');
-  const code = Array.from(inputs).map(i => i.value).join('');
-  if (code.length < 6) return;
+function otpInput(el, idx) {
+  el.value = el.value.replace(/\D/g, '').slice(0, 1);
+  el.style.borderColor = el.value ? 'var(--accent)' : '';
+  if (el.value && idx < 5) {
+    const next = document.getElementById('otp-' + (idx + 1));
+    if (next) next.focus();
+  }
+  // Auto-verify when all 6 filled
+  const code = Array.from({length:6}, (_,i) => {
+    const b = document.getElementById('otp-' + i); return b ? b.value : '';
+  }).join('');
+  if (code.length === 6) verifyOtp();
+}
 
-  try {
-    const res = await fetch('/api/v1/onboarding/verify-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: state.formData.email, otp: code })
-    });
-    
-    if (!res.ok) {
-       throw new Error('Invalid OTP');
+function otpKey(e, idx) {
+  if (e.key === 'Backspace') {
+    const cur = document.getElementById('otp-' + idx);
+    if (cur && !cur.value && idx > 0) {
+      const prev = document.getElementById('otp-' + (idx - 1));
+      if (prev) { prev.value = ''; prev.focus(); }
     }
-
-    document.getElementById('otp-success').classList.remove('hidden');
-    document.getElementById('otp-error').classList.add('hidden');
-    updateOrderSummary();
-    setTimeout(() => {
-      document.getElementById('c-name').value = state.formData.ownerName;
-      document.getElementById('c-email').value = state.formData.email;
-      showPage('checkout');
-    }, 1200);
-  } catch (err) {
-    document.getElementById('otp-error').classList.remove('hidden');
   }
 }
 
-// ─── Checkout / Payment ───────────────────────────────────────────────────────
-function setPayTab(el, tab) {
-  document.querySelectorAll('.pay-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
+function verifyOtp() {
+  const code = Array.from({length:6}, (_,i) => {
+    const b = document.getElementById('otp-' + i); return b ? b.value : '';
+  }).join('');
+  if (code.length < 6) {
+    showErr('err-otp', true);
+    document.getElementById('err-otp').textContent = 'Please enter all 6 digits.';
+    return;
+  }
+  if (code !== generatedOtp) {
+    showErr('err-otp', true);
+    document.getElementById('err-otp').textContent = 'Incorrect OTP. Please try again.';
+    for (let i = 0; i < 6; i++) {
+      const b = document.getElementById('otp-' + i);
+      if (b) b.style.borderColor = 'var(--error)';
+    }
+    return;
+  }
+  // OTP correct — advance to review
+  showErr('err-otp', false);
+  clearInterval(otpTimerInterval);
+  showStep(4);
+  populateReview();
 }
-function applyCoupon() {
-  const code = document.getElementById('c-coupon').value.trim().toUpperCase();
-  if (code === 'LAUNCH20' || code === 'SAVE20') {
-    state.couponApplied = true;
-    state.couponDiscount = 0.2;
-    document.getElementById('coupon-ok').classList.remove('hidden');
-    document.getElementById('coupon-err').classList.add('hidden');
-    document.getElementById('discount-line').style.display = 'flex';
-    updateOrderSummary();
-  } else {
-    document.getElementById('coupon-err').classList.remove('hidden');
-    document.getElementById('coupon-ok').classList.add('hidden');
+
+// ===== STATES/CITIES =====
+function populateStates(stateId, cityId) {
+  const el = document.getElementById(stateId);
+  if (!el) return;
+  el.innerHTML = '<option value="">Select State</option>';
+  Object.keys(STATES).forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s; opt.textContent = s;
+    el.appendChild(opt);
+  });
+}
+function populateSignupCities() {
+  const state = document.getElementById('s1-state').value;
+  const cityEl = document.getElementById('s1-city');
+  cityEl.innerHTML = '<option value="">Select City</option>';
+  if (state && STATES[state]) {
+    STATES[state].forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c; opt.textContent = c;
+      cityEl.appendChild(opt);
+    });
   }
 }
 
-async function initiatePayment() {
-  const btn = document.getElementById('btn-pay');
+// ===== CHIPS =====
+function toggleChip(el, group) {
+  if (group === 'size') {
+    document.querySelectorAll('#size-chips .chip').forEach(c => c.classList.remove('selected'));
+  }
+  el.classList.toggle('selected');
+}
+
+// ===== REVIEW =====
+function populateReview() {
+  const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  document.getElementById('rv-name').textContent = g('s0-name');
+  document.getElementById('rv-company').textContent = g('s0-company');
+  document.getElementById('rv-email').textContent = g('s0-email');
+  document.getElementById('rv-phone').textContent = g('s0-phone');
+  const state = g('s1-state'), city = g('s1-city');
+  document.getElementById('rv-location').textContent = city && state ? city + ', ' + state : '—';
+  const industries = Array.from(document.querySelectorAll('#industry-chips .chip.selected')).map(c => c.textContent).join(', ');
+  document.getElementById('rv-industry').textContent = industries || '—';
+  const size = document.querySelector('#size-chips .chip.selected');
+  document.getElementById('rv-size').textContent = size ? size.textContent : '—';
+  const sub = g('s2-subdomain');
+  document.getElementById('rv-subdomain').textContent = sub ? sub + '.realesso.in' : '—';
+  document.getElementById('rv-plan').textContent = PLAN_LABELS[selectedPlan] + ' (' + (isYearly ? 'Yearly' : 'Monthly') + ')';
+}
+
+// ===== CHECKOUT =====
+function goToCheckout() {
+  const name = document.getElementById('s0-name').value.trim();
+  const email = document.getElementById('s0-email').value.trim();
+  document.getElementById('co-name').value = name;
+  document.getElementById('co-email').value = email;
+  updateOrderSummary();
+  showPage('checkout');
+}
+
+function updateOrderSummary() {
+  const key = isYearly ? 'yearly' : 'monthly';
+  const base = PLAN_PRICES[selectedPlan][key];
+  const gst = Math.round(base * 0.18);
+  const total = base + gst;
+  const fmt = n => '₹' + n.toLocaleString('en-IN');
+  const osPlan = document.getElementById('os-plan');
+  const osBilling = document.getElementById('os-billing');
+  const osSub = document.getElementById('os-subtotal');
+  const osGst = document.getElementById('os-gst');
+  const osTotal = document.getElementById('os-total');
+  if (osPlan) osPlan.textContent = PLAN_LABELS[selectedPlan];
+  if (osBilling) osBilling.textContent = isYearly ? 'Yearly' : 'Monthly';
+  if (osSub) osSub.textContent = fmt(base);
+  if (osGst) osGst.textContent = fmt(gst);
+  if (osTotal) osTotal.textContent = fmt(total);
+}
+
+function updateOrderEmail() { /* real-time update hook */ }
+
+function validateCheckout() {
+  let ok = true;
+  ok &= vf('co-name','err-co-name', v => v.length > 0);
+  ok &= vf('co-email','err-co-email', v => emailRe.test(v));
+  ok &= vf('co-pan','err-co-pan', v => panRe.test(v));
+  return !!ok;
+}
+
+function initiatePayment() {
+  if (!validateCheckout()) return;
+  const btn = document.getElementById('pay-btn');
   const txt = document.getElementById('pay-btn-text');
-  const spn = document.getElementById('pay-btn-spinner');
+  const spin = document.getElementById('pay-spinner');
   btn.disabled = true;
-  txt.classList.add('hidden');
-  spn.classList.remove('hidden');
+  txt.style.display = 'none';
+  spin.style.display = 'inline-block';
 
-  // Razorpay flow
-  const plan = PLANS[state.plan];
-  const isYearly = state.billing === 'yearly';
-  const base = isYearly ? plan.yearly : plan.monthly;
-  const after = state.couponApplied ? Math.round(base * (1 - state.couponDiscount)) : base;
-  const gst = Math.round(after * 0.18);
-  const totalAmount = after + gst;
+  const key = isYearly ? 'yearly' : 'monthly';
+  const base = PLAN_PRICES[selectedPlan][key];
+  const gst = Math.round(base * 0.18);
+  const total = (base + gst) * 100; // paise
 
   const options = {
-    key: 'rzp_test_SJvF2hSQlMzoaq',
-    amount: totalAmount * 100, // in paise
+    key: 'rzp_test_placeholder',
+    amount: total,
     currency: 'INR',
-    name: 'Realesso CRM',
-    description: plan.name + ' Plan — ' + (isYearly ? 'Annual' : 'Monthly'),
-    image: 'https://realesso.com/logo.png',
+    name: 'Realesso',
+    description: PLAN_LABELS[selectedPlan] + ' Plan',
     prefill: {
-      name: document.getElementById('c-name').value || state.formData.ownerName,
-      email: document.getElementById('c-email').value || state.formData.email,
-      contact: state.formData.phone ? '91' + state.formData.phone : '',
+      name: document.getElementById('co-name').value.trim(),
+      email: document.getElementById('co-email').value.trim(),
     },
-    theme: { color: '#00e676' },
+    theme: { color: '#2563EB' },
     handler: function(response) {
-      handlePaymentSuccess(response);
+      btn.disabled = false;
+      txt.style.display = 'inline';
+      spin.style.display = 'none';
+      const sub = document.getElementById('s2-subdomain').value.trim();
+      const successUrl = document.getElementById('success-url');
+      if (successUrl) successUrl.textContent = (sub || 'yourcompany') + '.realesso.in';
+      showPage('success');
     },
     modal: {
       ondismiss: function() {
         btn.disabled = false;
-        txt.classList.remove('hidden');
-        spn.classList.add('hidden');
+        txt.style.display = 'inline';
+        spin.style.display = 'none';
       }
     }
   };
 
-  if (typeof Razorpay !== 'undefined') {
-    const rzp = new Razorpay(options);
-    rzp.open();
-  } else {
-    // For demo/dev environments where Razorpay might not load
-    console.warn('Razorpay SDK not loaded. Simulating success...');
-    handlePaymentSuccess({ 
-      razorpay_payment_id: 'pay_demo_' + Date.now(),
-      razorpay_order_id: 'order_demo_' + Date.now(),
-      razorpay_signature: 'manual_sig'
-    });
-  }
-}
-
-async function handlePaymentSuccess(response) {
   try {
-    const payload = {
-      signupData: state.formData,
-      razorpay_payment_id: response.razorpay_payment_id,
-      razorpay_order_id: response.razorpay_order_id || 'manual_order_' + Date.now(),
-      razorpay_signature: response.razorpay_signature || 'manual_sig'
-    };
-
-    const res = await fetch('/api/v1/onboarding/activate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+    const rzp = new Razorpay(options);
+    rzp.on('payment.failed', function() {
+      btn.disabled = false;
+      txt.style.display = 'inline';
+      spin.style.display = 'none';
     });
-
-    if (!res.ok) {
-       const resData = await res.json();
-       // Assuming the API returns { success: false, message: "Error message" } on !res.ok
-       throw new Error(resData.message || 'Tenant activation failed');
-    }
-
-    // Set success page data
-    const firstName = (state.formData.ownerName || 'there').split(' ')[0];
-    document.getElementById('success-name').textContent = firstName;
-    document.getElementById('success-email').textContent = state.formData.email || 'you@company.com';
-    document.getElementById('success-url').textContent = `https://${state.formData.subdomain || 'yourcompany'}.realesso.com`;
-    showPage('success');
-  } catch (err) {
-    alert('Activation failed: ' + err.message);
-    const btn = document.getElementById('btn-pay');
-    btn.disabled = false;
-    document.getElementById('pay-btn-text').classList.remove('hidden');
-    document.getElementById('pay-btn-spinner').classList.add('hidden');
+    rzp.open();
+  } catch(e) {
+    // Razorpay not loaded (test env) — simulate success
+    setTimeout(() => {
+      btn.disabled = false;
+      txt.style.display = 'inline';
+      spin.style.display = 'none';
+      const sub = document.getElementById('s2-subdomain').value.trim();
+      const successUrl = document.getElementById('success-url');
+      if (successUrl) successUrl.textContent = (sub || 'yourcompany') + '.realesso.in';
+      showPage('success');
+    }, 1500);
   }
 }
 
-function copyUrl() {
-  const url = document.getElementById('success-url')?.textContent || '';
-  navigator.clipboard?.writeText(url).then(() => {
-    const btn = document.querySelector('.copy-btn');
-    if (btn) { btn.textContent = '✅ Copied!'; setTimeout(() => btn.textContent = '📋 Copy', 2000); }
-  });
-}
-
-// ─── First-login wizard ───────────────────────────────────────────────────────
-function gotoWizStep(step) {
-  for (let i = 0; i <= 3; i++) {
-    document.getElementById('wiz-' + i)?.classList.add('hidden');
-    const ws = document.getElementById('wstep-' + i);
-    if (!ws) continue;
-    ws.classList.remove('active', 'done');
-    if (i < step) ws.classList.add('done'), (ws.querySelector('.wstep-num').textContent = '✓');
-    else if (i === step) ws.classList.add('active');
-    else ws.querySelector('.wstep-num').textContent = i + 1;
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  populateStates('s1-state','s1-city');
+  // Check URL param for pre-selected plan
+  const params = new URLSearchParams(window.location.search);
+  const planParam = params.get('plan');
+  if (planParam && PLAN_PRICES[planParam]) {
+    selectedPlan = planParam;
+    showPage('signup');
+    showStep(0);
   }
-  document.getElementById('wiz-' + step)?.classList.remove('hidden');
-  window.scrollTo(0, 0);
-}
+  updateOrderSummary();
+});
+</script>
 
-function previewLogo(input) {
-  if (input.files && input.files[0]) {
-    const reader = new FileReader();
-    reader.onload = e => {
-      document.getElementById('logo-img-preview').src = e.target.result;
-      document.getElementById('logo-img-preview').style.display = 'block';
-      document.getElementById('logo-preview-wrap').style.display = 'none';
-    };
-    reader.readAsDataURL(input.files[0]);
+<script>
+// ===== 3D CANVAS — slow, elegant city silhouette =====
+(function(){
+  const cv = document.getElementById('bg3d');
+  const cx = cv.getContext('2d');
+  let W, H, t = 0;
+  const dark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+  function resize(){ W = cv.width = window.innerWidth; H = cv.height = window.innerHeight; }
+  window.addEventListener('resize', resize); resize();
+  function sr(n){ let x=Math.sin(n*9301+49297)*233280; return x-Math.floor(x); }
+  const BLDGS = Array.from({length:16}, (_,i) => ({
+    x: 0.03 + (i/16)*0.94 + (sr(i*3)-.5)*0.03,
+    w: 0.028 + sr(i*7)*0.032,
+    h: 0.08  + sr(i*11)*0.22,
+    phase: sr(i*13)*Math.PI*2,
+    winRows: 2 + Math.floor(sr(i*17)*5),
+    winCols: 1 + Math.floor(sr(i*19)*3),
+  }));
+  const DOTS = Array.from({length:20}, (_,i) => ({
+    x: sr(i*23), y: 0.1 + sr(i*29)*0.7,
+    vx: (sr(i*31)-.5)*0.00008, vy: (sr(i*37)-.5)*0.00006,
+    r: 0.8 + sr(i*41)*1.4, a: 0.15 + sr(i*43)*0.35,
+  }));
+  function draw(){
+    cx.clearRect(0, 0, W, H);
+    t += 0.003;
+    const d = dark();
+    const bldFill   = d ? 'rgba(18,40,72,0.85)'   : 'rgba(10,31,68,0.06)';
+    const bldStroke = d ? 'rgba(30,60,110,0.6)'   : 'rgba(10,31,68,0.12)';
+    const winOn     = d ? 'rgba(255,210,100,0.55)' : 'rgba(255,180,60,0.45)';
+    const winOff    = d ? 'rgba(20,50,90,0.4)'     : 'rgba(10,31,68,0.04)';
+    const dotColor  = d ? 'rgba(180,210,255,0.18)' : 'rgba(10,31,68,0.08)';
+    const grd = cx.createRadialGradient(W*.5, 0, 0, W*.5, 0, H*.7);
+    if(d){ grd.addColorStop(0,'rgba(30,80,160,0.12)'); grd.addColorStop(1,'transparent'); }
+    else { grd.addColorStop(0,'rgba(200,220,255,0.18)'); grd.addColorStop(1,'transparent'); }
+    cx.fillStyle = grd; cx.fillRect(0,0,W,H);
+    cx.strokeStyle = d ? 'rgba(30,60,110,0.18)' : 'rgba(10,31,68,0.05)';
+    cx.lineWidth = 0.5;
+    for(let i=0;i<6;i++){ const y=H*0.72+i*(H*0.28/6); cx.beginPath();cx.moveTo(0,y);cx.lineTo(W,y);cx.stroke(); }
+    const groundY = H * 0.88;
+    BLDGS.forEach((b,i) => {
+      const bx=b.x*W, bw=b.w*W, bh=b.h*H*(0.9+0.1*Math.sin(t*0.4+b.phase)), by=groundY-bh;
+      cx.fillStyle=bldFill; cx.fillRect(bx-bw/2,by,bw,bh);
+      cx.strokeStyle=bldStroke; cx.lineWidth=0.8; cx.strokeRect(bx-bw/2,by,bw,bh);
+      const wPad=bw*.12, wW=(bw-wPad*2)/b.winCols-2, wH=Math.min(wW*1.3,8);
+      const wGapX=(bw-wPad*2-wW*b.winCols)/Math.max(1,b.winCols-1), wGapY=(bh*.7)/Math.max(1,b.winRows);
+      for(let r=0;r<b.winRows;r++) for(let c=0;c<b.winCols;c++){
+        const wx=bx-bw/2+wPad+c*(wW+wGapX), wy=by+bh*.12+r*wGapY;
+        const lit=Math.sin(t*.8+i*2.3+r*1.7+c*3.1)>-0.2;
+        cx.fillStyle=lit?winOn:winOff; cx.fillRect(wx,wy,Math.max(2,wW),Math.max(2,wH));
+      }
+      if(b.h>0.18){
+        cx.strokeStyle=d?'rgba(50,90,150,0.5)':'rgba(10,31,68,0.1)'; cx.lineWidth=0.8;
+        cx.beginPath();cx.moveTo(bx,by);cx.lineTo(bx,by-18);cx.stroke();
+        if(Math.sin(t*1.5+b.phase)>0.6){
+          cx.fillStyle=d?'rgba(255,80,80,0.7)':'rgba(220,38,38,0.4)';
+          cx.beginPath();cx.arc(bx,by-18,2,0,Math.PI*2);cx.fill();
+        }
+      }
+    });
+    DOTS.forEach(p => {
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0)p.x=1; if(p.x>1)p.x=0;
+      if(p.y<0.05)p.vy=Math.abs(p.vy); if(p.y>0.95)p.vy=-Math.abs(p.vy);
+      cx.beginPath(); cx.arc(p.x*W,p.y*H,p.r,0,Math.PI*2);
+      cx.fillStyle=dotColor; cx.fill();
+    });
+    requestAnimationFrame(draw);
   }
-}
-function handleLogoDrop(e) {
-  e.preventDefault();
-  const file = e.dataTransfer.files[0];
-  if (file) previewLogo({ files: [file] });
-}
-
-function addInviteRow() {
-  const row = document.createElement('div');
-  row.className = 'invite-row';
-  row.innerHTML = `<input class="input" type="email" placeholder="colleague@company.com" /><select class="role-select"><option>Agent</option><option>Sales Manager</option><option>Finance</option><option>HR</option><option>Admin</option></select><button class="btn btn-ghost" onclick="this.closest('.invite-row').remove()">✕</button>`;
-  document.getElementById('invite-rows').appendChild(row);
-}
-
-function finishWizard() {
-  document.getElementById('chk-team').classList.add('done');
-  document.getElementById('chk-team').querySelector('.check-status').textContent = 'Done ✓';
-  setTimeout(() => {
-    alert('🎉 All set! Your Realesso CRM dashboard is now loading...\n\nIn production this would redirect to your tenant dashboard.');
-  }, 500);
-}
-
-// ─── Init ─────────────────────────────────────────────────────────────────────
-setBilling('yearly');
+  draw();
+})();
 </script>
 </body>
 </html>

@@ -173,11 +173,7 @@ export const PaymentSchedulePage: React.FC = () => {
                     <TableRow key={inst.id} hover sx={{ '& td': { py: 1.6, borderBottom: `1px solid ${T.border}`, fontFamily: T.body }, '&:hover': { bgcolor: T.card } }}>
                       <TableCell><Typography sx={{ fontFamily: 'monospace', fontSize: 12, color: T.gold }}>{inst.bookingNo}</Typography></TableCell>
                       <TableCell>
-<<<<<<< HEAD
                         <Stack direction="row" spacing={1.2} alignItems="center">
-=======
-                        <Stack direction="row" spacing:1.2 alignItems="center">
->>>>>>> 2c89ac5d568fd1d7ee9a9fd3cc1a684740663140
                           <Avatar sx={{ width: 28, height: 28, bgcolor: avatarBg(inst.customerName), fontSize: 10, fontWeight: 800, ml: 0 }}>{initials(inst.customerName)}</Avatar>
                           <Box sx={{ ml: 1.2 }}>
                             <Typography sx={{ fontWeight: 800, fontSize: 13, color: T.text }}>{inst.customerName}</Typography>
