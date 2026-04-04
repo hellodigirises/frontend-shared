@@ -251,52 +251,53 @@ header{position:sticky;top:0;z-index:99;background:rgba(247,249,252,.95);backdro
         <div class="prog-circle" id="prog-4">5</div>
         <div class="prog-label">Review</div>
       </div>
-    </div>
-
-    <!-- STEP 0: ACCOUNT -->
-    <div class="step-card" id="step-0">
-      <h2>Create your account</h2>
-      <p class="step-sub">Set up your personal login credentials.</p>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Full Name *</label>
-          <input type="text" id="s0-name" placeholder="Rahul Sharma"/>
-          <div class="field-error" id="err-s0-name">Please enter your full name.</div>
-        </div>
-        <div class="form-group">
-          <label>Company Name *</label>
-          <input type="text" id="s0-company" placeholder="Sharma Realty Pvt Ltd"/>
-          <div class="field-error" id="err-s0-company">Please enter your company name.</div>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Work Email *</label>
-        <input type="email" id="s0-email" placeholder="rahul@agency.com"/>
-        <div class="field-error" id="err-s0-email">Please enter a valid email address.</div>
-      </div>
-      <div class="form-group">
-        <label>Phone Number *</label>
-        <input type="tel" id="s0-phone" placeholder="9876543210" maxlength="10"/>
-        <div class="field-error" id="err-s0-phone">Enter a valid 10-digit Indian mobile number (starts with 6-9).</div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Password *</label>
-          <div style="position:relative">
-            <input type="password" id="s0-password" placeholder="Min 8 characters" style="padding-right:44px"/>
-            <button type="button" onclick="togglePw('s0-password','eye-pw')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--txt3);display:flex;align-items:center;padding:0">
-              <span class="material-icons-round" id="eye-pw" style="font-size:20px">visibility_off</span>
-            </button>
+      <div class="form-body">
+        <div class="field field-row">
+          <div>
+            <label>Owner / MD Full Name *</label>
+            <input class="input" id="f-owner" type="text" placeholder="Rajesh Sharma" oninput="clearErr('f-owner')" />
+            <div class="error-msg hidden" id="err-owner"></div>
           </div>
-          <div class="field-error" id="err-s0-password">8–32 chars, uppercase, lowercase, number &amp; special character required.</div>
+          <div>
+            <label>Company Name *</label>
+            <input class="input" id="f-company" type="text" placeholder="Sunrise Builders Pvt Ltd" oninput="onCompanyInput()" />
+            <div class="error-msg hidden" id="err-company"></div>
+          </div>
         </div>
-        <div class="form-group">
-          <label>Confirm Password *</label>
-          <div style="position:relative">
-            <input type="password" id="s0-confirm" placeholder="Repeat password" style="padding-right:44px"/>
-            <button type="button" onclick="togglePw('s0-confirm','eye-conf')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--txt3);display:flex;align-items:center;padding:0">
-              <span class="material-icons-round" id="eye-conf" style="font-size:20px">visibility_off</span>
-            </button>
+        <div class="field field-row">
+          <div>
+            <label>Work Email *</label>
+            <input class="input" id="f-email" type="email" placeholder="owner@company.com" oninput="clearErr('f-email')" />
+            <div class="error-msg hidden" id="err-email"></div>
+          </div>
+          <div>
+            <label>Mobile Number *</label>
+            <div class="input-prefix">
+              <span class="prefix-text">🇮🇳 +91</span>
+              <input class="input" id="f-phone" type="tel" placeholder="98765 43210" maxlength="10" oninput="clearErr('f-phone')" />
+            </div>
+            <div class="error-msg hidden" id="err-phone"></div>
+          </div>
+        </div>
+        <div class="field field-row">
+          <div>
+            <label>Password *</label>
+            <input class="input" id="f-password" type="password" placeholder="Min 8 chars" oninput="checkPassword()" />
+            <div class="pw-strength" id="pw-strength-wrap">
+              <div class="pw-bars">
+                <div class="pw-bar" id="pwb0"></div>
+                <div class="pw-bar" id="pwb1"></div>
+                <div class="pw-bar" id="pwb2"></div>
+                <div class="pw-bar" id="pwb3"></div>
+              </div>
+              <div class="pw-label" id="pw-label">Enter a strong password</div>
+            </div>
+            <div class="error-msg hidden" id="err-password"></div>
+          </div>
+          <div>
+            <label>Confirm Password *</label>
+            <input class="input" id="f-confirm" type="password" placeholder="Re-enter password" oninput="clearErr('f-confirm')" />
+            <div class="error-msg hidden" id="err-confirm"></div>
           </div>
           <div class="field-error" id="err-s0-confirm">Passwords do not match.</div>
         </div>
@@ -505,75 +506,187 @@ header{position:sticky;top:0;z-index:99;background:rgba(247,249,252,.95);backdro
   </div>
 </div>
 
+<!-- ═══ PAGE: FIRST-LOGIN WIZARD ══════════════════════════ -->
+<div id="page-wizard" class="page">
+  <div class="wizard-wrap">
+    <div class="wizard-head">
+      <h1 style="font-family:var(--font-serif);font-size:2rem;margin-bottom:8px;">Welcome to Realesso 👋</h1>
+      <p class="text-muted">Let's set up your workspace in 4 quick steps</p>
+    </div>
+    <div class="wizard-steps">
+      <div class="wstep active" id="wstep-0"><div class="wstep-num">1</div><div class="wstep-label">Profile</div></div>
+      <div class="wstep-sep"></div>
+      <div class="wstep" id="wstep-1"><div class="wstep-num">2</div><div class="wstep-label">Logo</div></div>
+      <div class="wstep-sep"></div>
+      <div class="wstep" id="wstep-2"><div class="wstep-num">3</div><div class="wstep-label">Project</div></div>
+      <div class="wstep-sep"></div>
+      <div class="wstep" id="wstep-3"><div class="wstep-num">4</div><div class="wstep-label">Team</div></div>
+    </div>
+
+    <!-- Wizard step 0: Company profile -->
+    <div id="wiz-0" class="form-card">
+      <div class="form-head">
+        <div class="form-head-title">Company Profile</div>
+        <div class="form-head-sub">This appears on receipts, agreements and customer emails</div>
+      </div>
+      <div class="form-body">
+        <div class="field field-row">
+          <div><label>Support Email</label><input class="input" placeholder="support@yourcompany.com" /></div>
+          <div><label>Support Phone</label><input class="input" placeholder="+91 98765 43210" /></div>
+        </div>
+        <div class="field field-row">
+          <div><label>GST Number</label><input class="input" placeholder="22AAAAA0000A1Z5" /></div>
+          <div><label>RERA Number</label><input class="input" placeholder="MH/RERA/xxxx" /></div>
+        </div>
+        <div class="field"><label>Company Address</label><textarea class="input" rows="2" placeholder="Head office address..." style="resize:vertical;"></textarea></div>
+        <div class="field field-row-3">
+          <div><label>City</label><input class="input" placeholder="Mumbai" /></div>
+          <div><label>State</label><input class="input" placeholder="Maharashtra" /></div>
+          <div><label>Pincode</label><input class="input" placeholder="400001" /></div>
+        </div>
+      </div>
+      <div class="form-footer">
+        <span class="text-muted text-xs">Step 1 of 4</span>
+        <button class="btn btn-primary" onclick="gotoWizStep(1)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Wizard step 1: Logo -->
+    <div id="wiz-1" class="form-card hidden">
+      <div class="form-head">
+        <div class="form-head-title">Upload Company Logo</div>
+        <div class="form-head-sub">Shown on receipts, agreements, email headers and app navbar</div>
+      </div>
+      <div class="form-body">
+        <div class="upload-zone" id="logo-zone" onclick="document.getElementById('logo-file').click()" ondrop="handleLogoDrop(event)" ondragover="event.preventDefault()">
+          <div id="logo-preview-wrap">
+            <div class="upload-icon">🖼</div>
+            <div style="font-weight:700;margin-bottom:8px;">Drag & drop or click to upload</div>
+            <div class="upload-hint">PNG or SVG recommended · Min 200×200px · Max 2MB</div>
+          </div>
+          <img id="logo-img-preview" src="" style="max-height:100px;display:none;border-radius:8px;" />
+        </div>
+        <input type="file" id="logo-file" accept="image/*" style="display:none;" onchange="previewLogo(this)" />
+        <div class="alert-bar info" style="margin-top:16px;">💡 A transparent PNG logo works best on both light and dark backgrounds</div>
+      </div>
+      <div class="form-footer">
+        <button class="btn btn-ghost" onclick="gotoWizStep(0)">← Back</button>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-ghost" onclick="gotoWizStep(2)">Skip for now</button>
+          <button class="btn btn-primary" onclick="gotoWizStep(2)">Save & Continue →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wizard step 2: First project -->
+    <div id="wiz-2" class="form-card hidden">
+      <div class="form-head">
+        <div class="form-head-title">Add your first project</div>
+        <div class="form-head-sub">You can add unlimited projects later. Let's start with one.</div>
+      </div>
+      <div class="form-body">
+        <div class="field field-row">
+          <div><label>Project Name *</label><input class="input" id="proj-name" placeholder="Sunrise Heights" /></div>
+          <div><label>RERA Number</label><input class="input" placeholder="MH/RERA/xxxx/2024" /></div>
+        </div>
+        <div class="field field-row">
+          <div><label>City</label><input class="input" placeholder="Pune" /></div>
+          <div><label>Project Type</label>
+            <select class="input" style="background:var(--surface-2);">
+              <option>Residential Apartments</option>
+              <option>Villas</option>
+              <option>Plotted Development</option>
+              <option>Commercial</option>
+              <option>Mixed Use</option>
+            </select>
+          </div>
+        </div>
+        <div class="field field-row">
+          <div><label>Total Units</label><input class="input" type="number" placeholder="250" /></div>
+          <div><label>Possession Date</label><input class="input" type="date" /></div>
+        </div>
+      </div>
+      <div class="form-footer">
+        <button class="btn btn-ghost" onclick="gotoWizStep(1)">← Back</button>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-ghost" onclick="gotoWizStep(3)">Skip for now</button>
+          <button class="btn btn-primary" onclick="gotoWizStep(3)">Save Project →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wizard step 3: Invite team -->
+    <div id="wiz-3" class="form-card hidden">
+      <div class="form-head">
+        <div class="form-head-title">Invite your team</div>
+        <div class="form-head-sub">Add teammates now or later from Users & Permissions</div>
+      </div>
+      <div class="form-body">
+        <div id="invite-rows">
+          <div class="invite-row">
+            <input class="input" type="email" placeholder="agent@company.com" />
+            <select class="role-select">
+              <option>Agent</option>
+              <option>Sales Manager</option>
+              <option>Finance</option>
+              <option>HR</option>
+              <option>Admin</option>
+            </select>
+            <button class="btn btn-ghost" onclick="this.closest('.invite-row').remove()">✕</button>
+          </div>
+        </div>
+        <button class="btn btn-ghost" style="margin-top:10px;" onclick="addInviteRow()">+ Add Another</button>
+
+        <div style="margin-top:28px;">
+          <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);margin-bottom:14px;">🎯 Setup Checklist</div>
+          <div class="checklist">
+            <div class="check-item done" id="chk-profile"><div class="check-icon">🏢</div><div class="check-text">Company profile configured</div><div class="check-status">Done ✓</div></div>
+            <div class="check-item done" id="chk-logo"><div class="check-icon">🖼</div><div class="check-text">Logo uploaded</div><div class="check-status">Done ✓</div></div>
+            <div class="check-item done" id="chk-project"><div class="check-icon">🏗</div><div class="check-text">First project created</div><div class="check-status">Done ✓</div></div>
+            <div class="check-item" id="chk-team"><div class="check-icon">👥</div><div class="check-text">Team members invited</div><div class="check-status">Pending</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="form-footer">
+        <button class="btn btn-ghost" onclick="gotoWizStep(2)">← Back</button>
+        <button class="btn btn-primary btn-primary-lg" onclick="finishWizard()">🚀 Launch My Dashboard</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.chip-btn {
+  padding:8px 16px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  color:var(--text-2);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;font-family:var(--font-sans);
+}
+.chip-btn:hover { border-color:var(--border-light);color:var(--text-1); }
+.chip-btn.selected { background:rgba(0,230,118,.12);border-color:var(--emerald);color:var(--emerald); }
+</style>
+
 <script>
-// ===== DATA =====
-const STATES = {
-  'Maharashtra': ['Mumbai','Pune','Nagpur','Nashik','Aurangabad'],
-  'Karnataka': ['Bengaluru','Mysuru','Hubli','Mangaluru','Belagavi'],
-  'Tamil Nadu': ['Chennai','Coimbatore','Madurai','Salem','Tiruchirappalli'],
-  'Delhi': ['New Delhi','Dwarka','Rohini','Janakpuri','Saket'],
-  'Gujarat': ['Ahmedabad','Surat','Vadodara','Rajkot','Gandhinagar'],
-  'Rajasthan': ['Jaipur','Jodhpur','Udaipur','Kota','Ajmer'],
-  'Uttar Pradesh': ['Lucknow','Noida','Agra','Kanpur','Varanasi'],
-  'Telangana': ['Hyderabad','Warangal','Nizamabad','Karimnagar'],
-  'West Bengal': ['Kolkata','Howrah','Durgapur','Asansol'],
-  'Punjab': ['Chandigarh','Ludhiana','Amritsar','Jalandhar'],
-  'Haryana': ['Gurugram','Faridabad','Ambala','Hisar'],
-  'Madhya Pradesh': ['Bhopal','Indore','Jabalpur','Gwalior'],
+// ─── State ──────────────────────────────────────────────────────────────────
+const state = {
+  plan: 'growth',
+  billing: 'yearly',
+  formData: {},
+  otpTimer: null,
+  subdomainTimeout: null,
+  couponApplied: false,
+  couponDiscount: 0,
 };
 
-const PLAN_PRICES = {
-  starter:    { monthly: 2999,  yearly: 2399  },
-  growth:     { monthly: 7999,  yearly: 6399  },
-  enterprise: { monthly: 19999, yearly: 15999 },
+const PLANS = {
+  starter:    { name:'Starter',    icon:'🌱', monthly:4999,   yearly:49990  },
+  growth:     { name:'Growth',     icon:'🚀', monthly:14999,  yearly:149990 },
+  enterprise: { name:'Enterprise', icon:'🏆', monthly:39999,  yearly:399990 },
 };
-const PLAN_LABELS = { starter: 'Starter', growth: 'Growth', enterprise: 'Enterprise' };
 
-// ===== STATE =====
-let currentPage = 'plans';
-let currentStep = 0;
-let selectedPlan = 'growth';
-let isYearly = false;
-
-// ===== THEME =====
-function applyTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-  const icon = document.getElementById('theme-icon');
-  if (icon) icon.textContent = theme === 'dark' ? 'dark_mode' : 'light_mode';
-  localStorage.setItem('realesso-theme', theme);
-}
-function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme');
-  applyTheme(current === 'dark' ? 'light' : 'dark');
-}
-(function initTheme() {
-  const saved = localStorage.getItem('realesso-theme') || 'light';
-  applyTheme(saved);
-})();
-
-// ===== PAGE NAVIGATION =====
-const PAGES = ['plans','signup','checkout','success'];
-function showPage(page) {
-  PAGES.forEach(p => {
-    const el = document.getElementById('page-' + p);
-    if (el) el.classList.toggle('active', p === page);
-  });
-  currentPage = page;
-  window.scrollTo({top: 0, behavior: 'smooth'});
-}
-
-function handleBack() {
-  if (currentPage === 'plans') {
-    window.location.href = 'realesso_marketing_website.html';
-  } else if (currentPage === 'signup') {
-    if (currentStep === 0) showPage('plans');
-    else prevStep(currentStep);
-  } else if (currentPage === 'checkout') {
-    showPage('signup');
-    showStep(4);
-  } else {
-    window.location.href = 'realesso_marketing_website.html';
-  }
+// ─── Page navigation ────────────────────────────────────────────────────────
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + p).classList.add('active');
+  window.scrollTo(0, 0);
 }
 
 // ===== PLAN SELECTION =====
@@ -673,146 +786,90 @@ function validateStep0() {
   return !!ok;
 }
 
-function validateStep1() {
+async function checkSubdomainAvailability(slug) {
+  if (!slug || slug.length < 3) return;
+  try {
+    const res = await fetch('/api/v1/onboarding/check-subdomain', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subdomain: slug })
+    });
+    const resData = await res.json();
+    const ok = resData?.data?.available ?? false;
+    document.getElementById('subdomain-ok').classList.toggle('hidden', !ok);
+    document.getElementById('subdomain-err').classList.toggle('hidden', ok);
+    document.getElementById('subdomain-preview').textContent = slug;
+    
+    // Disable next button if taken
+    document.getElementById('btn-workspace-next').disabled = !ok;
+  } catch (err) {
+    console.error('Subdomain check failed', err);
+  }
+}
+
+// ─── Password strength ────────────────────────────────────────────────────────
+function checkPassword() {
+  const pw = document.getElementById('f-password').value;
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const labels = ['Too weak','Weak','Fair','Good','Strong'];
+  for (let i = 0; i < 4; i++) {
+    const bar = document.getElementById('pwb' + i);
+    bar.className = 'pw-bar' + (i < score ? ` filled-${score}` : '');
+  }
+  document.getElementById('pw-label').textContent = labels[score] || 'Too weak';
+}
+
+// ─── Signup navigation ────────────────────────────────────────────────────────
+function gotoSignupStep(step) {
+  for (let i = 0; i <= 3; i++) {
+    document.getElementById('signup-' + i)?.classList.add('hidden');
+    const bar = document.getElementById('sbar-' + i);
+    if (!bar) continue;
+    bar.classList.remove('active', 'done');
+    if (i < step) bar.classList.add('done'), (bar.querySelector('.step-node').textContent = '✓');
+    else if (i === step) bar.classList.add('active');
+    else bar.querySelector('.step-node').textContent = i + 1;
+  }
+  document.getElementById('signup-' + step)?.classList.remove('hidden');
+  window.scrollTo(0, 0);
+}
+
+function showErr(id, msg) { const el = document.getElementById('err-' + id); if (el) { el.textContent = msg; el.classList.remove('hidden'); } }
+function clearErr(id) { document.getElementById('err-' + id)?.classList.add('hidden'); const inp = document.getElementById('f-' + id) || document.getElementById('c-' + id); if (inp) inp.classList.remove('error'); }
+
+function signupStep0Next() {
   let ok = true;
-  ok &= vf('s1-state','err-s1-state', v => v.length > 0);
-  ok &= vf('s1-city','err-s1-city', v => v.length > 0);
-  const industrySelected = document.querySelectorAll('#industry-chips .chip.selected').length > 0;
-  showErr('err-industry', !industrySelected);
-  if (!industrySelected) ok = false;
-  const sizeSelected = document.querySelectorAll('#size-chips .chip.selected').length > 0;
-  showErr('err-size', !sizeSelected);
-  if (!sizeSelected) ok = false;
-  return !!ok;
-}
-
-function validateStep2() {
-  const val = document.getElementById('s2-subdomain').value.trim();
-  const ok = subdomainRe.test(val);
-  const row = document.getElementById('subdomain-row');
-  if (row) row.style.borderColor = ok ? '' : 'var(--error)';
-  showErr('err-s2-subdomain', !ok);
-  return ok;
-}
-
-function validateSubdomainLive() {
-  const val = document.getElementById('s2-subdomain').value.trim();
-  const ok = subdomainRe.test(val) || val.length === 0;
-  const row = document.getElementById('subdomain-row');
-  if (row) row.style.borderColor = ok ? '' : 'var(--error)';
-}
-
-function nextStep(step) {
-  let valid = false;
-  if (step === 0) valid = validateStep0();
-  else if (step === 1) valid = validateStep1();
-  else if (step === 2) valid = validateStep2();
-  else if (step === 3) { verifyOtp(); return; } // OTP step handles its own advance
-  if (!valid) return;
-  if (step < 4) {
-    showStep(step + 1);
-    if (step + 1 === 3) startOtpFlow(); // entering OTP step
-    if (step + 1 === 4) populateReview();
+  const ownerName = document.getElementById('f-owner').value.trim();
+  const companyName = document.getElementById('f-company').value.trim();
+  const email = document.getElementById('f-email').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
+  const password = document.getElementById('f-password').value;
+  const conf = document.getElementById('f-confirm').value;
+  const terms = document.getElementById('f-terms').checked;
+  
+  if (!ownerName) { showErr('owner', 'Name is required'); ok = false; }
+  if (!companyName) { showErr('company', 'Company name is required'); ok = false; }
+  if (!email.match(/^[^@]+@[^@]+\.[^@]+$/)) { showErr('email', 'Valid email required'); ok = false; }
+  if (!phone.match(/^\d{10}$/)) { showErr('phone', 'Enter valid 10-digit mobile number'); ok = false; }
+  if (password.length < 8) { showErr('password', 'Password must be at least 8 characters'); ok = false; }
+  if (password !== conf) { showErr('confirm', 'Passwords do not match'); ok = false; }
+  if (!terms) { showErr('terms', 'You must accept the Terms of Service'); ok = false; }
+  
+  if (ok) {
+    state.formData = { ownerName, companyName, email, phone, password };
+    gotoSignupStep(1);
   }
 }
 
-function prevStep(step) {
-  if (step > 0) showStep(step - 1);
-}
-
-// ===== OTP =====
-let otpTimerInterval = null;
-let generatedOtp = '';
-
-function startOtpFlow() {
-  // Show the email in the OTP screen
-  const email = document.getElementById('s0-email').value.trim();
-  const disp = document.getElementById('otp-email-display');
-  if (disp) disp.textContent = email;
-  // Clear previous inputs
-  for (let i = 0; i < 6; i++) {
-    const box = document.getElementById('otp-' + i);
-    if (box) { box.value = ''; box.style.borderColor = ''; }
-  }
-  showErr('err-otp', false);
-  // Generate a demo OTP (in production this would be sent via API)
-  generatedOtp = String(Math.floor(100000 + Math.random() * 900000));
-  console.info('Demo OTP (dev only):', generatedOtp); // visible in console for testing
-  startOtpTimer();
-  setTimeout(() => { const b = document.getElementById('otp-0'); if (b) b.focus(); }, 100);
-}
-
-function startOtpTimer() {
-  clearInterval(otpTimerInterval);
-  let secs = 60;
-  const timerEl = document.getElementById('otp-timer');
-  if (timerEl) timerEl.textContent = '(resend in ' + secs + 's)';
-  otpTimerInterval = setInterval(() => {
-    secs--;
-    if (timerEl) timerEl.textContent = secs > 0 ? '(resend in ' + secs + 's)' : '';
-    if (secs <= 0) clearInterval(otpTimerInterval);
-  }, 1000);
-}
-
-function resendOtp() {
-  generatedOtp = String(Math.floor(100000 + Math.random() * 900000));
-  console.info('Demo OTP (resent):', generatedOtp);
-  for (let i = 0; i < 6; i++) {
-    const box = document.getElementById('otp-' + i);
-    if (box) { box.value = ''; box.style.borderColor = ''; }
-  }
-  showErr('err-otp', false);
-  startOtpTimer();
-  setTimeout(() => { const b = document.getElementById('otp-0'); if (b) b.focus(); }, 50);
-}
-
-function otpInput(el, idx) {
-  el.value = el.value.replace(/\D/g, '').slice(0, 1);
-  el.style.borderColor = el.value ? 'var(--accent)' : '';
-  if (el.value && idx < 5) {
-    const next = document.getElementById('otp-' + (idx + 1));
-    if (next) next.focus();
-  }
-  // Auto-verify when all 6 filled
-  const code = Array.from({length:6}, (_,i) => {
-    const b = document.getElementById('otp-' + i); return b ? b.value : '';
-  }).join('');
-  if (code.length === 6) verifyOtp();
-}
-
-function otpKey(e, idx) {
-  if (e.key === 'Backspace') {
-    const cur = document.getElementById('otp-' + idx);
-    if (cur && !cur.value && idx > 0) {
-      const prev = document.getElementById('otp-' + (idx - 1));
-      if (prev) { prev.value = ''; prev.focus(); }
-    }
-  }
-}
-
-function verifyOtp() {
-  const code = Array.from({length:6}, (_,i) => {
-    const b = document.getElementById('otp-' + i); return b ? b.value : '';
-  }).join('');
-  if (code.length < 6) {
-    showErr('err-otp', true);
-    document.getElementById('err-otp').textContent = 'Please enter all 6 digits.';
-    return;
-  }
-  if (code !== generatedOtp) {
-    showErr('err-otp', true);
-    document.getElementById('err-otp').textContent = 'Incorrect OTP. Please try again.';
-    for (let i = 0; i < 6; i++) {
-      const b = document.getElementById('otp-' + i);
-      if (b) b.style.borderColor = 'var(--error)';
-    }
-    return;
-  }
-  // OTP correct — advance to review
-  showErr('err-otp', false);
-  clearInterval(otpTimerInterval);
-  showStep(4);
-  populateReview();
+function signupStep1Next() {
+  let ok = true;
+  if (!chipState.industry) { showErr('industry', 'Please select an industry type'); ok = false; }
+  if (!chipState.size) { showErr('size', 'Please select company size'); ok = false; }
+  if (ok) gotoSignupStep(2);
 }
 
 // ===== STATES/CITIES =====
